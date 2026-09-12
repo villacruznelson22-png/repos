@@ -1,0 +1,6 @@
+C:\Users\Nelson Villacruz\source\repos\WhoelsalePOS.Domain\bin\Debug\WhoelsalePOS.Domain.dll
+C:\Users\Nelson Villacruz\source\repos\WhoelsalePOS.Domain\bin\Debug\WhoelsalePOS.Domain.pdb
+C:\Users\Nelson Villacruz\source\repos\WhoelsalePOS.Domain\obj\Debug\WholesalePOS.Domain.csproj.AssemblyReference.cache
+C:\Users\Nelson Villacruz\source\repos\WhoelsalePOS.Domain\obj\Debug\WholesalePOS.Domain.csproj.CoreCompileInputs.cache
+C:\Users\Nelson Villacruz\source\repos\WhoelsalePOS.Domain\obj\Debug\WhoelsalePOS.Domain.dll
+C:\Users\Nelson Villacruz\source\repos\WhoelsalePOS.Domain\obj\Debug\WhoelsalePOS.Domain.pdb
