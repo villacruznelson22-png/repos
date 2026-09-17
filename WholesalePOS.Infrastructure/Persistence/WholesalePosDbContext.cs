@@ -11,17 +11,22 @@ public class WholesalePosDbContext : DbContext
     }
 
     public DbSet<Product> Products => Set<Product>();
+
+
     public DbSet<StockMovement> StockMovements => Set<StockMovement>();
+
+    public DbSet<Customer> Customers => Set<Customer>();
+
+    public DbSet<CustomerAddress> CustomerAddresses => Set<CustomerAddress>();
 
     #region Customer Address
     public DbSet<Region> Regions => Set<Region>();
 
     public DbSet<Province> Provinces => Set<Province>();
 
-    public DbSet<CityMunicipality> CityMunicipalities
-        => Set<CityMunicipality>();
+    public DbSet<CityMunicipality> CityMunicipalities => Set<CityMunicipality>();
 
-    public DbSet<Barangay> Barangays => Set<Barangay>(); 
+    public DbSet<Barangay> Barangays => Set<Barangay>();
     #endregion
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

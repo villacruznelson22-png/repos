@@ -1,0 +1,6 @@
+@WholesalePOS_HostAddress = http://localhost:5027
+
+GET {{WholesalePOS_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

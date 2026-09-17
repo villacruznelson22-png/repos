@@ -3,7 +3,7 @@ using WholesalePOS.Infrastructure.Persistence;
 
 namespace WholesalePOS.Infrastructure.Tests;
 
-public class TestDbContextFactory
+public static class TestDatabase
 {
     private const string ConnectionString =
         "Server=localhost\\SQLEXPRESS;" +
@@ -11,23 +11,17 @@ public class TestDbContextFactory
         "Trusted_Connection=True;" +
         "TrustServerCertificate=True;";
 
-    private readonly DbContextOptions<WholesalePosDbContext> _options;
-
-    public TestDbContextFactory()
+    public static async Task ResetAsync()
     {
-        _options =
+        var options =
             new DbContextOptionsBuilder<WholesalePosDbContext>()
                 .UseSqlServer(ConnectionString)
                 .Options;
-    }
 
-    public WholesalePosDbContext Create()
-    {
-        var context =
-            new WholesalePosDbContext(_options);
+        await using var context =
+            new WholesalePosDbContext(options);
 
-        context.Database.Migrate();
-
-        return context;
+        await context.Database.EnsureDeletedAsync();
+        await context.Database.MigrateAsync();
     }
 }
