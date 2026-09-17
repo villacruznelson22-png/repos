@@ -1,25 +1,35 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using WholesalePOS.Application.Common.Exceptions;
+using WholesalePOS.Domain.Entities;
 using WholesalePOS.Domain.ValueObjects;
 using WholesalePOS.Infrastructure.Persistence;
 
 namespace WholesalePOS.Infrastructure.Tests;
 
+
 public class ProductConcurrencyTests
 {
     [Fact]
+    [TestDatabase]
     public async Task ShouldDetectConcurrencyConflict()
     {
         // Arrange
+        var factory = new TestDbContextFactory();
 
-        var connectionString = "Server=localhost\\SQLEXPRESS;Database=WholesalePOSDb;Trusted_Connection=True;TrustServerCertificate=True;";
-
-        var factory = new TestDbContextFactory(connectionString);
         await using var contextA = factory.Create();
         await using var contextB = factory.Create();
 
-        // Use an existing product in your TEST database
-        var productId = Guid.Parse("B434A27A-EDDD-4C0D-925F-F5886CF1C915");
+        var product =
+            new Product(
+                "Concurrency Test Product",
+                null,
+                new Money(25.00m),
+                new Money(25.00m));
+
+        await contextA.Products.AddAsync(product);
+        await contextA.SaveChangesAsync();
+
+        var productId = product.Id;
 
         var productA =
             await contextA.Products
@@ -29,7 +39,7 @@ public class ProductConcurrencyTests
             await contextB.Products
                 .SingleAsync(x => x.Id == productId);
 
-        // Both contexts should have the same version
+        // Both contexts should have the same version.
         Assert.Equal(
             productA.Version,
             productB.Version);
@@ -49,34 +59,45 @@ public class ProductConcurrencyTests
     }
 
     [Fact]
+    [TestDatabase]
     public async Task ShouldThrowConcurrencyException_WhenTwoContextsUpdateSameProduct()
     {
         // Arrange
-        var connectionString = "Server=localhost\\SQLEXPRESS;Database=WholesalePOSDb;Trusted_Connection=True;TrustServerCertificate=True;";
-
-        var factory =
-            new TestDbContextFactory(connectionString);
+        var factory = new TestDbContextFactory();
 
         await using var contextA = factory.Create();
         await using var contextB = factory.Create();
 
-        var productId =
-            Guid.Parse("B434A27A-EDDD-4C0D-925F-F5886CF1C915");
+        var product =
+            new Product(
+                "Concurrency Test Product",
+                null,
+                new Money(25.00m),
+                new Money(25.00m));
 
-        var productA = await contextA.Products
-            .SingleAsync(x => x.Id == productId);
+        await contextA.Products.AddAsync(product);
+        await contextA.SaveChangesAsync();
 
-        var productB = await contextB.Products
-            .SingleAsync(x => x.Id == productId);
+        var productId = product.Id;
 
-        // Both contexts loaded the same version
+        var productA =
+            await contextA.Products
+                .SingleAsync(x => x.Id == productId);
+
+        var productB =
+            await contextB.Products
+                .SingleAsync(x => x.Id == productId);
+
+        // Both contexts loaded the same version.
         Assert.True(
-            productA.Version.SequenceEqual(productB.Version));
+            productA.Version.SequenceEqual(
+                productB.Version));
 
         // Act
-        var currentPrice = productA.DefaultSellingPrice.Value;
+        var currentPrice =
+            productA.DefaultSellingPrice.Value;
 
-        // User A changes the product
+        // User A changes the product.
         productA.ChangeDefaultSellingPrice(
             new Money(currentPrice + 1));
 
@@ -86,7 +107,7 @@ public class ProductConcurrencyTests
         await unitOfWorkA.SaveChangesAsync(
             CancellationToken.None);
 
-        // User B still has the old Version
+        // User B still has the old Version.
         productB.ChangeDefaultSellingPrice(
             new Money(currentPrice + 2));
 

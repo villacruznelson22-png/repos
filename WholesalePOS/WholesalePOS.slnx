@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="../WholesalePOS.Application.Tests/WholesalePOS.Application.Tests.csproj" Id="531f2729-3c80-47c3-9e7e-c09e5641f488" />
+  <Project Path="../WholesalePOS.Application/WholesalePOS.Application.csproj" Id="ff1e44a2-64c9-4f62-b9eb-0da3c97208bd" />
+  <Project Path="../WholesalePOS.Domain.Tests/WholesalePOS.Domain.Tests.csproj" Id="856485d2-428e-48ca-894c-41ead00a50f1" />
+  <Project Path="../WholesalePOS.Domain/WholesalePOS.Domain.csproj" Id="fde17143-b18d-4210-911e-dc134fecedae" />
+  <Project Path="../WholesalePOS.Infrastructure.Tests/WholesalePOS.Infrastructure.Tests.csproj" Id="044a251f-f3ff-4938-b2ad-324282c8e7e2" />
+  <Project Path="../WholesalePOS.Infrastructure/WholesalePOS.Infrastructure.csproj" Id="f0c2ec87-70d5-4959-b2c9-ed81f882286c" />
+  <Project Path="WholesalePOS.Api.csproj" />
+</Solution>

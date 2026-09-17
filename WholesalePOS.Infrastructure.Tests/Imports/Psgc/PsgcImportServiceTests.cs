@@ -5,20 +5,19 @@ using WholesalePOS.Infrastructure.Persistence;
 
 namespace WholesalePOS.Infrastructure.Tests.Imports.Psgc;
 
+
+
 public class PsgcImportServiceTests
 {
     [Fact]
+    [TestDatabase]
     public async Task ImportAsync_ShouldPersistPsgcHierarchy()
     {
         // Arrange
-        var options =
-            new DbContextOptionsBuilder<WholesalePosDbContext>()
-                .UseSqlServer(
-                    "Server=.\\SQLEXPRESS;Database=WholesalePOSDb;Trusted_Connection=True;TrustServerCertificate=True;")
-                .Options;
+        var factory = new TestDbContextFactory();
 
         await using var context =
-            new WholesalePosDbContext(options);
+            factory.Create();
 
         var reader =
             new PsgcExcelReader();
@@ -31,8 +30,7 @@ public class PsgcImportServiceTests
 
         var rows =
             reader.Read(
-                   @"C:\Users\Nelson Villacruz\Downloads\PSGC-2Q-2026-Publication-Datafile.xlsx");
-
+                @"C:\Users\Nelson Villacruz\Downloads\PSGC-2Q-2026-Publication-Datafile.xlsx");
 
         var regions =
             importer.Import(rows);
@@ -59,17 +57,14 @@ public class PsgcImportServiceTests
     }
 
     [Fact]
+    [TestDatabase]
     public async Task ImportAsync_ShouldRollback_WhenImportFails()
     {
         // Arrange
-        var options =
-            new DbContextOptionsBuilder<WholesalePosDbContext>()
-                .UseSqlServer(
-                     "Server=.\\SQLEXPRESS;Database=WholesalePOSDb;Trusted_Connection=True;TrustServerCertificate=True;")
-                .Options;
+        var factory = new TestDbContextFactory();
 
         await using var context =
-            new WholesalePosDbContext(options);
+            factory.Create();
 
         var importer =
             new PsgcImporter();
@@ -77,8 +72,6 @@ public class PsgcImportServiceTests
         var service =
             new PsgcImportService(context);
 
-        // Use a code that is extremely unlikely
-        // to exist in the real PSGC data.
         const string testRegionCode =
             "TEST-ROLLBACK-REGION";
 
@@ -98,7 +91,7 @@ public class PsgcImportServiceTests
         }
 
         // Create a region that already exists
-        // in the database.
+        // in the test database.
         var existingRegion =
             new Region(
                 testRegionCode,
@@ -111,12 +104,12 @@ public class PsgcImportServiceTests
         // Create an import containing the SAME region code.
         var rows = new[]
         {
-        new PsgcRow(
-            testRegionCode,
-            "Imported Test Region",
-            "Reg",
-            "")
-    };
+            new PsgcRow(
+                testRegionCode,
+                "Imported Test Region",
+                "Reg",
+                "")
+        };
 
         var regions =
             importer.Import(rows);
