@@ -29,6 +29,9 @@ public class WholesalePosDbContext : DbContext
     public DbSet<Barangay> Barangays => Set<Barangay>();
     #endregion
 
+    public DbSet<Supplier> Suppliers => Set<Supplier>();
+
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
