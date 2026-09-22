@@ -31,11 +31,12 @@ public class WholesalePosDbContext : DbContext
 
     public DbSet<Supplier> Suppliers => Set<Supplier>();
 
-    public DbSet<PurchaseOrder> PurchaseOrders
-    => Set<PurchaseOrder>();
+    public DbSet<PurchaseOrder> PurchaseOrders => Set<PurchaseOrder>();
 
-    public DbSet<PurchaseOrderLine> PurchaseOrderLines
-        => Set<PurchaseOrderLine>();
+    public DbSet<PurchaseOrderLine> PurchaseOrderLines => Set<PurchaseOrderLine>();
+
+    public DbSet<DeliveryReceipt> DeliveryReceipts => Set<DeliveryReceipt>();
+    public DbSet<DeliveryReceiptLine> DeliveryReceiptLines => Set<DeliveryReceiptLine>();
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
