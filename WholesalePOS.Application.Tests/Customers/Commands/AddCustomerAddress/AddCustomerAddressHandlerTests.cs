@@ -232,7 +232,6 @@ public class AddCustomerAddressHandlerTests
         Assert.False(oldAddress.IsDefault);
         Assert.True(addedAddress.IsDefault);
 
-        Assert.Single(
-            customer.Addresses.Where(x => x.IsDefault));
+        Assert.Single(customer.Addresses, x => x.IsDefault);
     }
 }

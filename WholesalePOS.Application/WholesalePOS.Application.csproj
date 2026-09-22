@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <Folder Include="DTOs\" />
+    <Folder Include="NewFolder\" />
     <Folder Include="Products\DTOs\" />
     <Folder Include="Products\Validators\" />
   </ItemGroup>
