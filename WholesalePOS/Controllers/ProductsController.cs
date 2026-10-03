@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using WholesalePOS.Application.Common.Models;
 using WholesalePOS.Application.Products.Commands.CreateProduct;
-using WholesalePOS.Application.Products.Commands.ReceiveStock;
 using WholesalePOS.Application.Products.Commands.UpdateSellingPrice;
 using WholesalePOS.Application.Products.Queries.GetProductById;
 using WholesalePOS.Application.Products.Queries.GetProducts;
@@ -30,21 +29,6 @@ namespace WholesalePOS.Api.Controllers
                 new { id },
                 id);
         }
-
-        [HttpPost("{id:guid}/stock/receive")]
-
-        public async Task<IActionResult> ReceiveStock(Guid id, [FromBody] ReceiveStockRequest request, CancellationToken cancellationToken)
-        {
-
-            await _sender.Send(
-                new ReceiveStockCommand(
-                    id,
-                    request.Quantity),
-                cancellationToken);
-
-            return NoContent();
-        }
-
 
 
         [HttpPut("{id:guid}/selling-price")]

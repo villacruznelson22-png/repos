@@ -6,7 +6,6 @@ using WholesalePOS.Domain.Services;
 using WholesalePOS.Infrastructure.Imports.Psgc;
 using WholesalePOS.Infrastructure.Persistence;
 using WholesalePOS.Infrastructure.Persistence.Repositories;
-using WholesalePOS.Infrastructure.Repositories;
 
 namespace WholesalePOS.Infrastructure;
 
