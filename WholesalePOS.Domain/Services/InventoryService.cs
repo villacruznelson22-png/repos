@@ -6,25 +6,6 @@ namespace WholesalePOS.Domain.Services;
 
 public class InventoryService
 {
-    public InventoryTransaction OpenInventory(
-        InventoryBalance balance,
-        decimal quantity,
-        InventoryCost unitCost,
-        string? referenceType = null,
-        Guid? referenceId = null)
-    {
-        balance.Receive(quantity, unitCost);
-
-        return new InventoryTransaction(
-            balance.ProductId,
-            InventoryTransactionType.OpeningBalance,
-            InventoryTransactionDirection.Increase,
-            new InventoryTransactionQuantity(quantity),
-            unitCost,
-            referenceType,
-            referenceId);
-    }
-
     public InventoryTransaction Receive(
         InventoryBalance balance,
         decimal quantity,
