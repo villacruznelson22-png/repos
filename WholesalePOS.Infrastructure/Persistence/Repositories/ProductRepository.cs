@@ -17,14 +17,23 @@ public class ProductRepository : Repository<Product>, IProductRepository
 
     public async Task<Product?> GetByBarcodeAsync(string barcode, CancellationToken cancellationToken)
     {
+        // BUSINESS RULE: Barcode uniqueness is enforced against the persisted Barcode value.
+        // Comparing the value object itself allows EF Core to apply the configured value converter
+        // instead of trying to translate the nested Barcode.Value property.
+        var productBarcode = new Barcode(barcode);
+
         return await _context.Products
-            .FirstOrDefaultAsync(x => x.Barcode != null && x.Barcode.Value == barcode, cancellationToken);
+            .FirstOrDefaultAsync(x => x.Barcode == productBarcode, cancellationToken);
     }
 
     public async Task<bool> ExistsByBarcodeAsync(string barcode, CancellationToken cancellationToken)
     {
+        // BUSINESS RULE: A barcode may belong to only one product.
+        // Compare the Barcode value object so EF Core can translate the configured conversion to SQL.
+        var productBarcode = new Barcode(barcode);
+
         return await _context.Products
-            .AnyAsync(x => x.Barcode != null && x.Barcode.Value == barcode, cancellationToken);
+            .AnyAsync(x => x.Barcode == productBarcode, cancellationToken);
     }
 
     public async Task<PagedResult<ProductListItemDto>> GetPagedAsync(GetProductsQuery query, CancellationToken cancellationToken)
