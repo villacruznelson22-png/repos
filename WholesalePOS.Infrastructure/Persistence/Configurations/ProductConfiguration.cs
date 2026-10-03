@@ -46,8 +46,12 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
             .IsRowVersion();
 
 
+        // BUSINESS RULE: A barcode may identify only one product, while products without
+        // a barcode must remain allowed. The SQL Server filtered index enforces uniqueness
+        // only for non-null barcode values.
         builder.HasIndex(p => p.Barcode)
-            .IsUnique();
+            .IsUnique()
+            .HasFilter("[Barcode] IS NOT NULL");
 
 
     }
