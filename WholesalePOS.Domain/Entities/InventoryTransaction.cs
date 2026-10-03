@@ -12,7 +12,7 @@ public class InventoryTransaction
     public InventoryTransactionType Type { get; private set; }
     public InventoryTransactionDirection Direction { get; private set; }
 
-    public InventoryTransactionQuantity Quantity { get; private set; } = null!;
+    public InventoryTransactionQuantity? Quantity { get; private set; }
 
     // Historical/current cost associated with the quantity movement.
     public InventoryCost? UnitCost { get; private set; }
@@ -102,7 +102,7 @@ public class InventoryTransaction
         Direction = valueAdjustment > 0
             ? InventoryTransactionDirection.Increase
             : InventoryTransactionDirection.Decrease;
-        Quantity = new InventoryTransactionQuantity(1);
+        Quantity = null;
         TotalCost = decimal.Round(
             Math.Abs(valueAdjustment),
             6,
@@ -114,8 +114,8 @@ public class InventoryTransaction
 
     public decimal SignedQuantity =>
         Direction == InventoryTransactionDirection.Increase
-            ? Quantity.Value
-            : -Quantity.Value;
+            ? Quantity?.Value ?? 0
+            : -(Quantity?.Value ?? 0);
 
     public decimal SignedCost =>
         Direction == InventoryTransactionDirection.Increase
