@@ -29,6 +29,8 @@ public static class DependencyInjection
         services.AddScoped<IPurchaseOrderRepository,PurchaseOrderRepository>();
         services.AddScoped<IDeliveryReceiptRepository, DeliveryReceiptRepository>();
 
+        services.AddScoped<ISaleRepository, SaleRepository>();
+
 
         services.AddScoped<InventoryService>();
         services.AddScoped<PsgcImportService>();
