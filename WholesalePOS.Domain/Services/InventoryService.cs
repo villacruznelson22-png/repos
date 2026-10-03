@@ -1,4 +1,4 @@
-﻿using WholesalePOS.Domain.Entities;
+using WholesalePOS.Domain.Entities;
 using WholesalePOS.Domain.Enums;
 using WholesalePOS.Domain.ValueObjects;
 
@@ -6,25 +6,76 @@ namespace WholesalePOS.Domain.Services;
 
 public class InventoryService
 {
-    public StockMovement ReceiveStock(Product product, decimal quantity)
+    public InventoryTransaction OpenInventory(
+        InventoryBalance balance,
+        decimal quantity,
+        InventoryCost unitCost,
+        string? referenceType = null,
+        Guid? referenceId = null)
     {
-        product.AddStock(quantity);
+        balance.Receive(quantity, unitCost);
 
-        return new StockMovement(
-            product.Id,
-            StockMovementType.Purchase,
-            StockMovementDirection.Increase,
-            new StockMovementQuantity(quantity));
+        return new InventoryTransaction(
+            balance.ProductId,
+            InventoryTransactionType.OpeningBalance,
+            InventoryTransactionDirection.Increase,
+            new InventoryTransactionQuantity(quantity),
+            unitCost,
+            referenceType,
+            referenceId);
     }
 
-    public StockMovement SellStock(Product product, decimal quantity)
+    public InventoryTransaction Receive(
+        InventoryBalance balance,
+        decimal quantity,
+        InventoryCost unitCost,
+        string? referenceType = null,
+        Guid? referenceId = null)
     {
-        product.RemoveStock(quantity);
+        balance.Receive(quantity, unitCost);
 
-        return new StockMovement(
-            product.Id,
-            StockMovementType.Sale,
-            StockMovementDirection.Decrease,
-            new StockMovementQuantity(quantity));
+        return new InventoryTransaction(
+            balance.ProductId,
+            InventoryTransactionType.Purchase,
+            InventoryTransactionDirection.Increase,
+            new InventoryTransactionQuantity(quantity),
+            unitCost,
+            referenceType,
+            referenceId);
+    }
+
+    public InventoryCost Consume(
+        InventoryBalance balance,
+        decimal quantity,
+        InventoryTransactionType type,
+        string? referenceType = null,
+        Guid? referenceId = null)
+    {
+        if (type is not InventoryTransactionType.Sale
+            and not InventoryTransactionType.Damage)
+        {
+            throw new ArgumentException(
+                "Consume only supports Sale or Damage transactions.",
+                nameof(type));
+        }
+
+        var unitCost = balance.Consume(quantity);
+
+        return unitCost;
+    }
+
+    public InventoryTransaction AdjustValue(
+        InventoryBalance balance,
+        decimal valueAdjustment,
+        string referenceType,
+        Guid referenceId)
+    {
+        balance.AdjustValue(valueAdjustment);
+
+        return new InventoryTransaction(
+            balance.ProductId,
+            valueAdjustment,
+            referenceType,
+            referenceId);
     }
 }
