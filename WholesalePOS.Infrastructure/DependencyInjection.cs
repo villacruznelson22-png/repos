@@ -6,7 +6,6 @@ using WholesalePOS.Domain.Services;
 using WholesalePOS.Infrastructure.Imports.Psgc;
 using WholesalePOS.Infrastructure.Persistence;
 using WholesalePOS.Infrastructure.Persistence.Repositories;
-using WholesalePOS.Infrastructure.Repositories;
 
 namespace WholesalePOS.Infrastructure;
 
@@ -23,7 +22,8 @@ public static class DependencyInjection
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 
         services.AddScoped<IProductRepository, ProductRepository>();
-        services.AddScoped<IStockMovementRepository, StockMovementRepository>();
+        services.AddScoped<IInventoryTransactionRepository, InventoryTransactionRepository>();
+        services.AddScoped<IInventoryBalanceRepository, InventoryBalanceRepository>();
         services.AddScoped<ICustomerRepository, CustomerRepository>();
         services.AddScoped<ISupplierRepository, SupplierRepository>();
         services.AddScoped<IPurchaseOrderRepository,PurchaseOrderRepository>();

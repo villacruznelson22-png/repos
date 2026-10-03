@@ -1,53 +1,55 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using WholesalePOS.Domain.Entities;
-using WholesalePOS.Domain.ValueObjects;
 
 namespace WholesalePOS.Infrastructure.Persistence;
 
+/// <summary>
+/// EF Core database context for WholesalePOS.
+/// </summary>
 public class WholesalePosDbContext : DbContext
 {
-    public WholesalePosDbContext(DbContextOptions<WholesalePosDbContext> options) : base(options)
+    public WholesalePosDbContext(DbContextOptions<WholesalePosDbContext> options)
+        : base(options)
     {
     }
 
     public DbSet<Product> Products => Set<Product>();
 
+    /// <summary>
+    /// Current operational inventory state, one row per product.
+    /// </summary>
+    public DbSet<InventoryBalance> InventoryBalances => Set<InventoryBalance>();
 
-    public DbSet<StockMovement> StockMovements => Set<StockMovement>();
+    /// <summary>
+    /// Historical inventory ledger containing every inventory-affecting event.
+    /// </summary>
+    public DbSet<InventoryTransaction> InventoryTransactions =>
+        Set<InventoryTransaction>();
 
     public DbSet<Customer> Customers => Set<Customer>();
-
     public DbSet<CustomerAddress> CustomerAddresses => Set<CustomerAddress>();
 
     #region Customer Address
+
     public DbSet<Region> Regions => Set<Region>();
-
     public DbSet<Province> Provinces => Set<Province>();
-
     public DbSet<CityMunicipality> CityMunicipalities => Set<CityMunicipality>();
-
     public DbSet<Barangay> Barangays => Set<Barangay>();
+
     #endregion
 
     public DbSet<Supplier> Suppliers => Set<Supplier>();
-
     public DbSet<PurchaseOrder> PurchaseOrders => Set<PurchaseOrder>();
-
     public DbSet<PurchaseOrderLine> PurchaseOrderLines => Set<PurchaseOrderLine>();
-
     public DbSet<DeliveryReceipt> DeliveryReceipts => Set<DeliveryReceipt>();
     public DbSet<DeliveryReceiptLine> DeliveryReceiptLines => Set<DeliveryReceiptLine>();
-
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        //This tells EF:
-        //"Go through this assembly and automatically find every class implementing IEntityTypeConfiguration<T>."
-
+        // All entity configurations are discovered and applied automatically.
         modelBuilder.ApplyConfigurationsFromAssembly(
             typeof(WholesalePosDbContext).Assembly);
-
     }
 }
