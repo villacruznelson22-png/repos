@@ -106,13 +106,10 @@ public class InventoryBalance
             InventoryValue = 0;
             AverageUnitCost = new InventoryCost(0);
         }
-        else
-        {
-            // The average cost does not change when inventory is consumed.
-            AverageUnitCost = new InventoryCost(
-                InventoryValue / QuantityOnHand);
-        }
 
+        // Moving weighted-average cost does not change when stock is consumed.
+        // Keep the existing average instead of deriving it again from a rounded
+        // inventory value.
         return new InventoryCost(
             costAtCurrentAverage / quantity);
     }
