@@ -38,6 +38,10 @@ public class WholesalePosDbContext : DbContext
     public DbSet<DeliveryReceipt> DeliveryReceipts => Set<DeliveryReceipt>();
     public DbSet<DeliveryReceiptLine> DeliveryReceiptLines => Set<DeliveryReceiptLine>();
 
+    public DbSet<Sale> Sales => Set<Sale>();
+
+    public DbSet<SaleLine> SaleLines => Set<SaleLine>();
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
