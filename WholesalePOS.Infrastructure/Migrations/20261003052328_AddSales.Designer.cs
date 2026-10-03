@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WholesalePOS.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using WholesalePOS.Infrastructure.Persistence;
 namespace WholesalePOS.Infrastructure.Migrations
 {
     [DbContext(typeof(WholesalePosDbContext))]
-    partial class WholesalePosDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261003052328_AddSales")]
+    partial class AddSales
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -232,79 +235,6 @@ namespace WholesalePOS.Infrastructure.Migrations
                     b.HasIndex("ProductId");
 
                     b.ToTable("DeliveryReceiptLines", (string)null);
-                });
-
-            modelBuilder.Entity("WholesalePOS.Domain.Entities.InventoryBalance", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("AverageUnitCost")
-                        .HasPrecision(19, 6)
-                        .HasColumnType("decimal(19,6)");
-
-                    b.Property<decimal>("InventoryValue")
-                        .HasPrecision(19, 6)
-                        .HasColumnType("decimal(19,6)");
-
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("QuantityOnHand")
-                        .HasPrecision(18, 3)
-                        .HasColumnType("decimal(18,3)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProductId")
-                        .IsUnique();
-
-                    b.ToTable("InventoryBalances", (string)null);
-                });
-
-            modelBuilder.Entity("WholesalePOS.Domain.Entities.InventoryTransaction", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("Direction")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("OccurredAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal?>("Quantity")
-                        .HasPrecision(18, 3)
-                        .HasColumnType("decimal(18,3)");
-
-                    b.Property<Guid?>("ReferenceId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ReferenceType")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<decimal>("TotalCost")
-                        .HasPrecision(19, 6)
-                        .HasColumnType("decimal(19,6)");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("int");
-
-                    b.Property<decimal?>("UnitCost")
-                        .HasPrecision(19, 6)
-                        .HasColumnType("decimal(19,6)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProductId", "OccurredAt");
-
-                    b.ToTable("InventoryTransactions", (string)null);
                 });
 
             modelBuilder.Entity("WholesalePOS.Domain.Entities.Product", b =>
@@ -669,24 +599,6 @@ namespace WholesalePOS.Infrastructure.Migrations
                     b.Navigation("DeliveryReceipt");
 
                     b.Navigation("Product");
-                });
-
-            modelBuilder.Entity("WholesalePOS.Domain.Entities.InventoryBalance", b =>
-                {
-                    b.HasOne("WholesalePOS.Domain.Entities.Product", null)
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("WholesalePOS.Domain.Entities.InventoryTransaction", b =>
-                {
-                    b.HasOne("WholesalePOS.Domain.Entities.Product", null)
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("WholesalePOS.Domain.Entities.Province", b =>
