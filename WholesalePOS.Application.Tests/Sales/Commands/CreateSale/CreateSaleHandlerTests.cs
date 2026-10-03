@@ -9,6 +9,17 @@ namespace WholesalePOS.Application.Tests.Sales.Commands.CreateSale;
 
 public class CreateSaleHandlerTests
 {
+    private static InventoryBalance CreateInventoryBalance(
+        Guid productId,
+        decimal quantity = 100,
+        decimal averageUnitCost = 60)
+    {
+        return InventoryBalance.CreateOpeningBalance(
+            productId,
+            quantity,
+            new InventoryCost(averageUnitCost));
+    }
+
     [Fact]
     public async Task Handle_ShouldCreateWalkInSale()
     {
@@ -18,11 +29,20 @@ public class CreateSaleHandlerTests
             new Money(80),
             new Money(75));
 
+        var inventoryBalance =
+            CreateInventoryBalance(
+                product.Id,
+                100,
+                60);
+
         var customerRepository =
             new Mock<ICustomerRepository>();
 
         var productRepository =
             new Mock<IProductRepository>();
+
+        var inventoryBalanceRepository =
+            new Mock<IInventoryBalanceRepository>();
 
         var saleRepository =
             new Mock<ISaleRepository>();
@@ -35,6 +55,12 @@ public class CreateSaleHandlerTests
                 product.Id,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(product);
+
+        inventoryBalanceRepository
+            .Setup(x => x.GetByProductIdAsync(
+                product.Id,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(inventoryBalance);
 
         Sale? capturedSale = null;
 
@@ -50,6 +76,7 @@ public class CreateSaleHandlerTests
         var handler = new CreateSaleHandler(
             customerRepository.Object,
             productRepository.Object,
+            inventoryBalanceRepository.Object,
             saleRepository.Object,
             unitOfWork.Object);
 
@@ -97,6 +124,10 @@ public class CreateSaleHandlerTests
             line.Quantity);
 
         Assert.Equal(
+            60,
+            line.UnitCost.Value);
+
+        Assert.Equal(
             75,
             line.UnitSellingPrice.Value);
 
@@ -126,11 +157,20 @@ public class CreateSaleHandlerTests
             new Money(80),
             new Money(75));
 
+        var inventoryBalance =
+            CreateInventoryBalance(
+                product.Id,
+                100,
+                60);
+
         var customerRepository =
             new Mock<ICustomerRepository>();
 
         var productRepository =
             new Mock<IProductRepository>();
+
+        var inventoryBalanceRepository =
+            new Mock<IInventoryBalanceRepository>();
 
         var saleRepository =
             new Mock<ISaleRepository>();
@@ -150,6 +190,12 @@ public class CreateSaleHandlerTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(product);
 
+        inventoryBalanceRepository
+            .Setup(x => x.GetByProductIdAsync(
+                product.Id,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(inventoryBalance);
+
         Sale? capturedSale = null;
 
         saleRepository
@@ -164,6 +210,7 @@ public class CreateSaleHandlerTests
         var handler = new CreateSaleHandler(
             customerRepository.Object,
             productRepository.Object,
+            inventoryBalanceRepository.Object,
             saleRepository.Object,
             unitOfWork.Object);
 
@@ -193,13 +240,19 @@ public class CreateSaleHandlerTests
         Assert.Single(
             capturedSale.Lines);
 
+        var line = capturedSale.Lines.Single();
+
         Assert.Equal(
             20,
-            capturedSale.Lines.Single().Quantity);
+            line.Quantity);
+
+        Assert.Equal(
+            60,
+            line.UnitCost.Value);
 
         Assert.Equal(
             74,
-            capturedSale.Lines.Single().UnitSellingPrice.Value);
+            line.UnitSellingPrice.Value);
     }
 
     [Fact]
@@ -212,6 +265,9 @@ public class CreateSaleHandlerTests
 
         var productRepository =
             new Mock<IProductRepository>();
+
+        var inventoryBalanceRepository =
+            new Mock<IInventoryBalanceRepository>();
 
         var saleRepository =
             new Mock<ISaleRepository>();
@@ -228,6 +284,7 @@ public class CreateSaleHandlerTests
         var handler = new CreateSaleHandler(
             customerRepository.Object,
             productRepository.Object,
+            inventoryBalanceRepository.Object,
             saleRepository.Object,
             unitOfWork.Object);
 
@@ -274,6 +331,9 @@ public class CreateSaleHandlerTests
         var productRepository =
             new Mock<IProductRepository>();
 
+        var inventoryBalanceRepository =
+            new Mock<IInventoryBalanceRepository>();
+
         var saleRepository =
             new Mock<ISaleRepository>();
 
@@ -289,6 +349,7 @@ public class CreateSaleHandlerTests
         var handler = new CreateSaleHandler(
             customerRepository.Object,
             productRepository.Object,
+            inventoryBalanceRepository.Object,
             saleRepository.Object,
             unitOfWork.Object);
 
@@ -332,6 +393,9 @@ public class CreateSaleHandlerTests
         var productRepository =
             new Mock<IProductRepository>();
 
+        var inventoryBalanceRepository =
+            new Mock<IInventoryBalanceRepository>();
+
         var saleRepository =
             new Mock<ISaleRepository>();
 
@@ -347,6 +411,7 @@ public class CreateSaleHandlerTests
         var handler = new CreateSaleHandler(
             customerRepository.Object,
             productRepository.Object,
+            inventoryBalanceRepository.Object,
             saleRepository.Object,
             unitOfWork.Object);
 
@@ -396,6 +461,9 @@ public class CreateSaleHandlerTests
         var productRepository =
             new Mock<IProductRepository>();
 
+        var inventoryBalanceRepository =
+            new Mock<IInventoryBalanceRepository>();
+
         var saleRepository =
             new Mock<ISaleRepository>();
 
@@ -411,6 +479,7 @@ public class CreateSaleHandlerTests
         var handler = new CreateSaleHandler(
             customerRepository.Object,
             productRepository.Object,
+            inventoryBalanceRepository.Object,
             saleRepository.Object,
             unitOfWork.Object);
 
@@ -444,7 +513,7 @@ public class CreateSaleHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldAllowMultipleLinesForSameProduct()
+    public async Task Handle_ShouldThrow_WhenInventoryBalanceDoesNotExist()
     {
         var product = new Product(
             "Coca-Cola 1.5L",
@@ -458,6 +527,9 @@ public class CreateSaleHandlerTests
         var productRepository =
             new Mock<IProductRepository>();
 
+        var inventoryBalanceRepository =
+            new Mock<IInventoryBalanceRepository>();
+
         var saleRepository =
             new Mock<ISaleRepository>();
 
@@ -469,6 +541,95 @@ public class CreateSaleHandlerTests
                 product.Id,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(product);
+
+        inventoryBalanceRepository
+            .Setup(x => x.GetByProductIdAsync(
+                product.Id,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((InventoryBalance?)null);
+
+        var handler = new CreateSaleHandler(
+            customerRepository.Object,
+            productRepository.Object,
+            inventoryBalanceRepository.Object,
+            saleRepository.Object,
+            unitOfWork.Object);
+
+        var command = new CreateSaleCommand(
+            null,
+            DateTime.UtcNow,
+            null,
+            null,
+            [
+                new CreateSaleLineRequest(
+                    product.Id,
+                    10,
+                    75)
+            ]);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => handler.Handle(
+                command,
+                CancellationToken.None));
+
+        saleRepository.Verify(
+            x => x.AddAsync(
+                It.IsAny<Sale>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+
+        unitOfWork.Verify(
+            x => x.SaveChangesAsync(
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+
+        unitOfWork.Verify(
+            x => x.SaveChangesAsync(
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldSnapshotInventoryAverageCost()
+    {
+        var product = new Product(
+            "Coca-Cola 1.5L",
+            null,
+            new Money(80),
+            new Money(75));
+
+        var inventoryBalance =
+            CreateInventoryBalance(
+                product.Id,
+                150,
+                273);
+
+        var customerRepository =
+            new Mock<ICustomerRepository>();
+
+        var productRepository =
+            new Mock<IProductRepository>();
+
+        var inventoryBalanceRepository =
+            new Mock<IInventoryBalanceRepository>();
+
+        var saleRepository =
+            new Mock<ISaleRepository>();
+
+        var unitOfWork =
+            new Mock<IUnitOfWork>();
+
+        productRepository
+            .Setup(x => x.GetByIdAsync(
+                product.Id,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(product);
+
+        inventoryBalanceRepository
+            .Setup(x => x.GetByProductIdAsync(
+                product.Id,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(inventoryBalance);
 
         Sale? capturedSale = null;
 
@@ -484,6 +645,7 @@ public class CreateSaleHandlerTests
         var handler = new CreateSaleHandler(
             customerRepository.Object,
             productRepository.Object,
+            inventoryBalanceRepository.Object,
             saleRepository.Object,
             unitOfWork.Object);
 
@@ -496,12 +658,7 @@ public class CreateSaleHandlerTests
                 new CreateSaleLineRequest(
                     product.Id,
                     10,
-                    75),
-
-                new CreateSaleLineRequest(
-                    product.Id,
-                    5,
-                    70)
+                    300)
             ]);
 
         await handler.Handle(
@@ -510,30 +667,87 @@ public class CreateSaleHandlerTests
 
         Assert.NotNull(capturedSale);
 
-        Assert.Equal(
-            2,
-            capturedSale!.Lines.Count);
+        var line = capturedSale!.Lines.Single();
 
         Assert.Equal(
-            10,
-            capturedSale.Lines.ElementAt(0).Quantity);
+            273,
+            line.UnitCost.Value);
 
         Assert.Equal(
-            75,
-            capturedSale.Lines.ElementAt(0).UnitSellingPrice.Value);
+            300,
+            line.UnitSellingPrice.Value);
+    }
 
-        Assert.Equal(
-            5,
-            capturedSale.Lines.ElementAt(1).Quantity);
+    [Fact]
+    public async Task Handle_ShouldNotConsumeInventory_WhenCreatingDraftSale()
+    {
+        var product = new Product(
+            "Coca-Cola 1.5L",
+            null,
+            new Money(80),
+            new Money(75));
 
-        Assert.Equal(
-            70,
-            capturedSale.Lines.ElementAt(1).UnitSellingPrice.Value);
-
-        productRepository.Verify(
-            x => x.GetByIdAsync(
+        var inventoryBalance =
+            CreateInventoryBalance(
                 product.Id,
-                It.IsAny<CancellationToken>()),
-            Times.Once);
+                100,
+                60);
+
+        var originalQuantity =
+            inventoryBalance.QuantityOnHand;
+
+        var customerRepository =
+            new Mock<ICustomerRepository>();
+
+        var productRepository =
+            new Mock<IProductRepository>();
+
+        var inventoryBalanceRepository =
+            new Mock<IInventoryBalanceRepository>();
+
+        var saleRepository =
+            new Mock<ISaleRepository>();
+
+        var unitOfWork =
+            new Mock<IUnitOfWork>();
+
+        productRepository
+            .Setup(x => x.GetByIdAsync(
+                product.Id,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(product);
+
+        inventoryBalanceRepository
+            .Setup(x => x.GetByProductIdAsync(
+                product.Id,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(inventoryBalance);
+
+        var handler = new CreateSaleHandler(
+            customerRepository.Object,
+            productRepository.Object,
+            inventoryBalanceRepository.Object,
+            saleRepository.Object,
+            unitOfWork.Object);
+
+        var command = new CreateSaleCommand(
+            null,
+            DateTime.UtcNow,
+            null,
+            null,
+            [
+                new CreateSaleLineRequest(
+                    product.Id,
+                    10,
+                    75)
+            ]);
+
+        await handler.Handle(
+            command,
+            CancellationToken.None);
+
+        Assert.Equal(
+            originalQuantity,
+            inventoryBalance.QuantityOnHand);
     }
 }

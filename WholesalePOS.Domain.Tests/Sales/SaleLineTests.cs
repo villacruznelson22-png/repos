@@ -16,9 +16,11 @@ public class SaleLineTests
             saleId,
             productId,
             10,
+            new Money(150),
             new Money(180));
 
         Assert.NotEqual(Guid.Empty, line.Id);
+
         Assert.Equal(
             saleId,
             line.SaleId);
@@ -30,6 +32,10 @@ public class SaleLineTests
         Assert.Equal(
             10,
             line.Quantity);
+
+        Assert.Equal(
+            150,
+            line.UnitCost.Value);
 
         Assert.Equal(
             180,
@@ -45,6 +51,7 @@ public class SaleLineTests
                     Guid.Empty,
                     Guid.NewGuid(),
                     10,
+                    new Money(150),
                     new Money(180)));
 
         Assert.Equal(
@@ -61,6 +68,7 @@ public class SaleLineTests
                     Guid.NewGuid(),
                     Guid.Empty,
                     10,
+                    new Money(150),
                     new Money(180)));
 
         Assert.Equal(
@@ -76,6 +84,7 @@ public class SaleLineTests
                 Guid.NewGuid(),
                 Guid.NewGuid(),
                 0,
+                new Money(150),
                 new Money(180)));
     }
 
@@ -87,6 +96,19 @@ public class SaleLineTests
                 Guid.NewGuid(),
                 Guid.NewGuid(),
                 -1,
+                new Money(150),
+                new Money(180)));
+    }
+
+    [Fact]
+    public void Constructor_ShouldThrow_WhenUnitCostIsNegative()
+    {
+        Assert.Throws<SaleDomainException>(
+            () => new SaleLine(
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                10,
+                new Money(-1),
                 new Money(180)));
     }
 
@@ -98,6 +120,7 @@ public class SaleLineTests
                 Guid.NewGuid(),
                 Guid.NewGuid(),
                 10,
+                new Money(150),
                 new Money(-1)));
     }
 
@@ -108,6 +131,7 @@ public class SaleLineTests
             Guid.NewGuid(),
             Guid.NewGuid(),
             10,
+            new Money(150),
             new Money(180));
 
         line.ChangeQuantity(20);
@@ -124,6 +148,7 @@ public class SaleLineTests
             Guid.NewGuid(),
             Guid.NewGuid(),
             10,
+            new Money(150),
             new Money(180));
 
         Assert.Throws<SaleDomainException>(
@@ -137,6 +162,7 @@ public class SaleLineTests
             Guid.NewGuid(),
             Guid.NewGuid(),
             10,
+            new Money(150),
             new Money(180));
 
         line.ChangeUnitSellingPrice(
@@ -154,10 +180,33 @@ public class SaleLineTests
             Guid.NewGuid(),
             Guid.NewGuid(),
             10,
+            new Money(150),
             new Money(180));
 
         Assert.Throws<SaleDomainException>(
             () => line.ChangeUnitSellingPrice(
                 new Money(-1)));
+    }
+
+    [Fact]
+    public void UnitCost_ShouldRemainUnchanged_WhenSellingPriceChanges()
+    {
+        var line = new SaleLine(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            10,
+            new Money(150),
+            new Money(180));
+
+        line.ChangeUnitSellingPrice(
+            new Money(190));
+
+        Assert.Equal(
+            150,
+            line.UnitCost.Value);
+
+        Assert.Equal(
+            190,
+            line.UnitSellingPrice.Value);
     }
 }

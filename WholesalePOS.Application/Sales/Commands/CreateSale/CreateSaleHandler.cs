@@ -11,17 +11,20 @@ public class CreateSaleHandler
 {
     private readonly ICustomerRepository _customerRepository;
     private readonly IProductRepository _productRepository;
+    private readonly IInventoryBalanceRepository _inventoryBalanceRepository;
     private readonly ISaleRepository _saleRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public CreateSaleHandler(
         ICustomerRepository customerRepository,
         IProductRepository productRepository,
+        IInventoryBalanceRepository inventoryBalanceRepository,
         ISaleRepository saleRepository,
         IUnitOfWork unitOfWork)
     {
         _customerRepository = customerRepository;
         _productRepository = productRepository;
+        _inventoryBalanceRepository = inventoryBalanceRepository;
         _saleRepository = saleRepository;
         _unitOfWork = unitOfWork;
     }
@@ -30,6 +33,10 @@ public class CreateSaleHandler
         CreateSaleCommand request,
         CancellationToken cancellationToken)
     {
+        // ---------------------------------------------------------
+        // Customer validation
+        // ---------------------------------------------------------
+
         if (request.CustomerId.HasValue)
         {
             var customer =
@@ -50,10 +57,16 @@ public class CreateSaleHandler
             }
         }
 
+        // ---------------------------------------------------------
+        // Product validation
+        // ---------------------------------------------------------
+
         var productIds = request.Lines
             .Select(x => x.ProductId)
             .Distinct()
             .ToList();
+
+        var products = new Dictionary<Guid, Product>();
 
         foreach (var productId in productIds)
         {
@@ -73,7 +86,13 @@ public class CreateSaleHandler
                 throw new InvalidOperationException(
                     $"Product '{productId}' is inactive and cannot be sold.");
             }
+
+            products.Add(product.Id, product);
         }
+
+        // ---------------------------------------------------------
+        // Create sale
+        // ---------------------------------------------------------
 
         var sale = new Sale(
             request.CustomerId,
@@ -81,16 +100,49 @@ public class CreateSaleHandler
             request.ReferenceNumber,
             request.Notes);
 
+        // ---------------------------------------------------------
+        // Create sale lines
+        // ---------------------------------------------------------
+
         foreach (var requestLine in request.Lines)
         {
+            var product = products[requestLine.ProductId];
+
+            // The current inventory balance is the source of the
+            // historical inventory cost for the sale.
+            var inventoryBalance =
+                await _inventoryBalanceRepository.GetByProductIdAsync(
+                    product.Id,
+                    cancellationToken);
+
+            if (inventoryBalance is null)
+            {
+                throw new InvalidOperationException(
+                    $"No inventory balance exists for product '{product.Name}'.");
+            }
+
+            // Snapshot the current moving weighted-average cost.
+            //
+            // Important:
+            // We are NOT consuming inventory here because the sale
+            // is still a Draft. Consumption belongs to the sale
+            // confirmation/posting workflow.
+            var unitCost = new Money(
+                inventoryBalance.AverageUnitCost.Value);
+
             var line = new SaleLine(
                 sale.Id,
                 requestLine.ProductId,
                 requestLine.Quantity,
+                unitCost,
                 new Money(requestLine.UnitSellingPrice));
 
             sale.AddLine(line);
         }
+
+        // ---------------------------------------------------------
+        // Persist
+        // ---------------------------------------------------------
 
         await _saleRepository.AddAsync(
             sale,

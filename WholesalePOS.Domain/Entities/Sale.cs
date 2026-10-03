@@ -94,13 +94,10 @@ public class Sale
             throw new SaleDomainException(
                 "Sale line does not belong to this sale.");
 
-        /*
-         * Unlike PurchaseOrder, duplicate products are allowed.
-         *
-         * This gives us flexibility for future scenarios where
-         * separate lines may represent different selling prices,
-         * promotions, or other sales conditions.
-         */
+        if (Lines.Any(x => x.ProductId == line.ProductId))
+            throw new SaleDomainException(
+                "The same product cannot be added more than once to a sale.");
+
         Lines.Add(line);
     }
 

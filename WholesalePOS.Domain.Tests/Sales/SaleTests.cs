@@ -22,6 +22,7 @@ public class SaleTests
             saleId,
             productId ?? Guid.NewGuid(),
             10,
+            new Money(150),
             new Money(180));
     }
 
@@ -38,13 +39,27 @@ public class SaleTests
             "Test notes");
 
         Assert.NotEqual(Guid.Empty, sale.Id);
-        Assert.Equal(customerId, sale.CustomerId);
-        Assert.Equal(occurredAt, sale.OccurredAt);
-        Assert.Equal("SALE-001", sale.ReferenceNumber);
-        Assert.Equal("Test notes", sale.Notes);
+
+        Assert.Equal(
+            customerId,
+            sale.CustomerId);
+
+        Assert.Equal(
+            occurredAt,
+            sale.OccurredAt);
+
+        Assert.Equal(
+            "SALE-001",
+            sale.ReferenceNumber);
+
+        Assert.Equal(
+            "Test notes",
+            sale.Notes);
+
         Assert.Equal(
             SaleStatus.Draft,
             sale.Status);
+
         Assert.Empty(sale.Lines);
     }
 
@@ -56,6 +71,7 @@ public class SaleTests
             DateTime.UtcNow);
 
         Assert.Null(sale.CustomerId);
+
         Assert.Equal(
             SaleStatus.Draft,
             sale.Status);
@@ -74,9 +90,10 @@ public class SaleTests
     }
 
     [Fact]
-    public void AddLine_ShouldAllowDuplicateProducts()
+    public void AddLine_ShouldThrow_WhenDuplicateProductIsAdded()
     {
         var sale = CreateSale();
+
         var productId = Guid.NewGuid();
 
         var firstLine = CreateLine(
@@ -88,14 +105,16 @@ public class SaleTests
             productId);
 
         sale.AddLine(firstLine);
-        sale.AddLine(secondLine);
 
-        Assert.Equal(2, sale.Lines.Count);
-        Assert.All(
-            sale.Lines,
-            line => Assert.Equal(
-                productId,
-                line.ProductId));
+        var exception =
+            Assert.Throws<SaleDomainException>(
+                () => sale.AddLine(secondLine));
+
+        Assert.Equal(
+            "The same product cannot be added more than once to a sale.",
+            exception.Message);
+
+        Assert.Single(sale.Lines);
     }
 
     [Fact]
@@ -135,7 +154,9 @@ public class SaleTests
             line.Id,
             25);
 
-        Assert.Equal(25, line.Quantity);
+        Assert.Equal(
+            25,
+            line.Quantity);
     }
 
     [Fact]
