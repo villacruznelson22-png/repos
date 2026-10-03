@@ -3,6 +3,9 @@ using WholesalePOS.Domain.Entities;
 
 namespace WholesalePOS.Infrastructure.Persistence;
 
+/// <summary>
+/// EF Core database context for WholesalePOS.
+/// </summary>
 public class WholesalePosDbContext : DbContext
 {
     public WholesalePosDbContext(DbContextOptions<WholesalePosDbContext> options)
@@ -12,14 +15,18 @@ public class WholesalePosDbContext : DbContext
 
     public DbSet<Product> Products => Set<Product>();
 
+    /// <summary>
+    /// Current operational inventory state, one row per product.
+    /// </summary>
+    public DbSet<InventoryBalance> InventoryBalances => Set<InventoryBalance>();
+
+    /// <summary>
+    /// Historical inventory ledger containing every inventory-affecting event.
+    /// </summary>
     public DbSet<InventoryTransaction> InventoryTransactions =>
         Set<InventoryTransaction>();
 
-    public DbSet<InventoryBalance> InventoryBalances =>
-        Set<InventoryBalance>();
-
     public DbSet<Customer> Customers => Set<Customer>();
-
     public DbSet<CustomerAddress> CustomerAddresses => Set<CustomerAddress>();
 
     #region Customer Address
@@ -32,22 +39,16 @@ public class WholesalePosDbContext : DbContext
     #endregion
 
     public DbSet<Supplier> Suppliers => Set<Supplier>();
-
     public DbSet<PurchaseOrder> PurchaseOrders => Set<PurchaseOrder>();
-
-    public DbSet<PurchaseOrderLine> PurchaseOrderLines =>
-        Set<PurchaseOrderLine>();
-
-    public DbSet<DeliveryReceipt> DeliveryReceipts =>
-        Set<DeliveryReceipt>();
-
-    public DbSet<DeliveryReceiptLine> DeliveryReceiptLines =>
-        Set<DeliveryReceiptLine>();
+    public DbSet<PurchaseOrderLine> PurchaseOrderLines => Set<PurchaseOrderLine>();
+    public DbSet<DeliveryReceipt> DeliveryReceipts => Set<DeliveryReceipt>();
+    public DbSet<DeliveryReceiptLine> DeliveryReceiptLines => Set<DeliveryReceiptLine>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
+        // All entity configurations are discovered and applied automatically.
         modelBuilder.ApplyConfigurationsFromAssembly(
             typeof(WholesalePosDbContext).Assembly);
     }
