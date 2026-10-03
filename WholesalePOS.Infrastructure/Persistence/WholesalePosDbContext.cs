@@ -15,6 +15,8 @@ public class WholesalePosDbContext : DbContext
 
     public DbSet<StockMovement> StockMovements => Set<StockMovement>();
 
+    public DbSet<InventoryBalance> InventoryBalances => Set<InventoryBalance>();
+
     public DbSet<Customer> Customers => Set<Customer>();
 
     public DbSet<CustomerAddress> CustomerAddresses => Set<CustomerAddress>();
