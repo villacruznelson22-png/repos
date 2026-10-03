@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WholesalePOS.Domain.Entities;
 using WholesalePOS.Domain.ValueObjects;
 
@@ -30,8 +31,9 @@ public class InventoryBalanceConfiguration
 
         builder.Property(x => x.AverageUnitCost)
             .HasConversion(
-                cost => cost.Value,
-                value => new InventoryCost(value))
+                new ValueConverter<InventoryCost, decimal>(
+                    cost => cost.Value,
+                    value => new InventoryCost(value)))
             .HasPrecision(19, 6)
             .IsRequired();
 
