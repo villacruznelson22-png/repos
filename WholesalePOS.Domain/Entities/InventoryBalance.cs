@@ -51,6 +51,11 @@ public class InventoryBalance
                 : inventoryValue / quantityOnHand);
     }
 
+    public static InventoryBalance CreateEmpty(Guid productId)
+    {
+        return new InventoryBalance(productId, 0, 0);
+    }
+
     public static InventoryBalance CreateOpeningBalance(
         Guid productId,
         decimal quantity,
