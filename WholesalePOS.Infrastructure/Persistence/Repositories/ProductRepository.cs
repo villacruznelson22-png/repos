@@ -4,6 +4,7 @@ using WholesalePOS.Application.Interfaces;
 using WholesalePOS.Application.Products.Queries.GetProducts;
 using WholesalePOS.Domain.Entities;
 using WholesalePOS.Domain.Specifications;
+using WholesalePOS.Domain.ValueObjects;
 using WholesalePOS.Infrastructure.Persistence;
 
 namespace WholesalePOS.Infrastructure.Persistence.Repositories;
