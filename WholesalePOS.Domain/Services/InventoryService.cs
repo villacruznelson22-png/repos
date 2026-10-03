@@ -44,7 +44,7 @@ public class InventoryService
             referenceId);
     }
 
-    public InventoryCost Consume(
+    public InventoryTransaction Consume(
         InventoryBalance balance,
         decimal quantity,
         InventoryTransactionType type,
@@ -61,7 +61,14 @@ public class InventoryService
 
         var unitCost = balance.Consume(quantity);
 
-        return unitCost;
+        return new InventoryTransaction(
+            balance.ProductId,
+            type,
+            InventoryTransactionDirection.Decrease,
+            new InventoryTransactionQuantity(quantity),
+            unitCost,
+            referenceType,
+            referenceId);
     }
 
     public InventoryTransaction AdjustValue(
