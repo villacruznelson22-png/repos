@@ -34,6 +34,14 @@ public class PaymentConfiguration
         builder.Property(x => x.ReferenceNumber)
             .HasMaxLength(100);
 
+        builder.Property(x => x.IdempotencyKey)
+            .HasMaxLength(100)
+            .IsRequired();
+
+        builder.HasIndex(x => x.IdempotencyKey)
+            .IsUnique()
+            .HasDatabaseName("UX_Payments_IdempotencyKey");
+
         builder.HasOne(x => x.Sale)
             .WithMany(x => x.Payments)
             .HasForeignKey(x => x.SaleId)
