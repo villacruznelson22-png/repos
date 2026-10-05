@@ -1,8 +1,8 @@
-﻿namespace WholesalePOS.Domain.Enums;
-
-public enum SaleStatus
+﻿public enum SaleStatus
 {
     Draft = 1,
     Confirmed = 2,
-    Cancelled = 3
+    Completed = 3,
+    Cancelled = 4,
+    Voided = 5
 }

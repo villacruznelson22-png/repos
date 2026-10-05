@@ -11,20 +11,17 @@ public class CreateSaleHandler
 {
     private readonly ICustomerRepository _customerRepository;
     private readonly IProductRepository _productRepository;
-    private readonly IInventoryBalanceRepository _inventoryBalanceRepository;
     private readonly ISaleRepository _saleRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public CreateSaleHandler(
         ICustomerRepository customerRepository,
         IProductRepository productRepository,
-        IInventoryBalanceRepository inventoryBalanceRepository,
         ISaleRepository saleRepository,
         IUnitOfWork unitOfWork)
     {
         _customerRepository = customerRepository;
         _productRepository = productRepository;
-        _inventoryBalanceRepository = inventoryBalanceRepository;
         _saleRepository = saleRepository;
         _unitOfWork = unitOfWork;
     }
@@ -103,38 +100,23 @@ public class CreateSaleHandler
         // ---------------------------------------------------------
         // Create sale lines
         // ---------------------------------------------------------
+        //
+        // Important:
+        // UnitCost is intentionally NOT captured here.
+        //
+        // The sale is still a Draft, so the current inventory
+        // cost may change before checkout.
+        //
+        // The historical UnitCost will be captured later during
+        // CheckoutSale from the current InventoryBalance MWAC.
+        // ---------------------------------------------------------
 
         foreach (var requestLine in request.Lines)
         {
-            var product = products[requestLine.ProductId];
-
-            // The current inventory balance is the source of the
-            // historical inventory cost for the sale.
-            var inventoryBalance =
-                await _inventoryBalanceRepository.GetByProductIdAsync(
-                    product.Id,
-                    cancellationToken);
-
-            if (inventoryBalance is null)
-            {
-                throw new InvalidOperationException(
-                    $"No inventory balance exists for product '{product.Name}'.");
-            }
-
-            // Snapshot the current moving weighted-average cost.
-            //
-            // Important:
-            // We are NOT consuming inventory here because the sale
-            // is still a Draft. Consumption belongs to the sale
-            // confirmation/posting workflow.
-            var unitCost = new Money(
-                inventoryBalance.AverageUnitCost.Value);
-
             var line = new SaleLine(
                 sale.Id,
                 requestLine.ProductId,
                 requestLine.Quantity,
-                unitCost,
                 new Money(requestLine.UnitSellingPrice));
 
             sale.AddLine(line);

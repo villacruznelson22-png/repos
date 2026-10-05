@@ -27,17 +27,34 @@ public class SaleLineConfiguration
             .HasPrecision(18, 3)
             .IsRequired();
 
-        // Historical inventory cost captured when the sale is created.
-        // This is system-controlled and must not be edited by sales users.
+        // ---------------------------------------------------------
+        // Historical inventory cost
+        // ---------------------------------------------------------
+        //
+        // UnitCost is captured only when the sale is completed.
+        // Therefore it is nullable while the sale is Draft or
+        // Confirmed.
+        //
+        // InventoryCost uses 6 decimal places because inventory
+        // costing requires greater precision than selling prices.
+        //
         builder.Property(x => x.UnitCost)
             .HasConversion(
-                money => money.Value,
-                value => new Money(value))
-            .HasPrecision(18, 2)
-            .IsRequired();
+                cost => cost == null
+                    ? (decimal?)null
+                    : cost.Value,
+                value => value.HasValue
+                    ? new InventoryCost(value.Value)
+                    : null)
+            .HasPrecision(19, 6)
+            .IsRequired(false);
 
-        // Historical selling price captured when the sale is created.
-        // Authorized users may change this while the sale is still a draft.
+        // ---------------------------------------------------------
+        // Historical selling price
+        // ---------------------------------------------------------
+        //
+        // Selling prices use Money and therefore 2 decimal places.
+        //
         builder.Property(x => x.UnitSellingPrice)
             .HasConversion(
                 money => money.Value,
@@ -56,10 +73,14 @@ public class SaleLineConfiguration
             .OnDelete(DeleteBehavior.Cascade);
 
         // A product may appear only once within a sale.
-        // The application/domain layer also enforces this rule,
-        // while this index protects the invariant at database level.
-        builder.HasIndex(x => new { x.SaleId, x.ProductId })
-            .IsUnique()
-            .HasDatabaseName("UX_SaleLines_Sale_Product");
+        // The domain layer also enforces this rule, while this
+        // unique index protects the invariant at database level.
+        builder.HasIndex(x => new
+        {
+            x.SaleId,
+            x.ProductId
+        })
+        .IsUnique()
+        .HasDatabaseName("UX_SaleLines_Sale_Product");
     }
 }
