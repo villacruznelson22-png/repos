@@ -33,6 +33,9 @@ public class Sale
     public ICollection<SaleLine> Lines { get; private set; }
         = new List<SaleLine>();
 
+    public ICollection<Payment> Payments { get; private set; }
+        = new List<Payment>();
+
     private Sale()
     {
         // Used by EF Core
@@ -165,6 +168,29 @@ public class Sale
         }
 
         line.ChangeUnitSellingPrice(unitSellingPrice);
+    }
+
+    public void AddPayment(Payment payment)
+    {
+        if (payment is null)
+        {
+            throw new SaleDomainException(
+                "Payment cannot be null.");
+        }
+
+        if (Status != SaleStatus.Confirmed)
+        {
+            throw new SaleDomainException(
+                "Payments can only be added to a confirmed sale.");
+        }
+
+        if (payment.SaleId != Id)
+        {
+            throw new SaleDomainException(
+                "Payment does not belong to this sale.");
+        }
+
+        Payments.Add(payment);
     }
 
     public void Confirm()
