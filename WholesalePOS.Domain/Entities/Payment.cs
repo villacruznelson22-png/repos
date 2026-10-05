@@ -12,6 +12,7 @@ public class Payment
     public Money Amount { get; private set; } = null!;
     public DateTime PaidAt { get; private set; }
     public string? ReferenceNumber { get; private set; }
+    public string IdempotencyKey { get; private set; } = null!;
 
     public Sale Sale { get; private set; } = null!;
 
@@ -25,6 +26,7 @@ public class Payment
         PaymentMethod method,
         Money amount,
         DateTime paidAt,
+        string idempotencyKey,
         string? referenceNumber = null)
     {
         if (saleId == Guid.Empty)
@@ -34,11 +36,16 @@ public class Payment
             throw new SaleDomainException(
                 "Payment amount must be greater than zero.");
 
+        if (string.IsNullOrWhiteSpace(idempotencyKey))
+            throw new SaleDomainException(
+                "Payment idempotency key cannot be empty.");
+
         Id = Guid.NewGuid();
         SaleId = saleId;
         Method = method;
         Amount = amount;
         PaidAt = paidAt;
+        IdempotencyKey = idempotencyKey.Trim();
 
         ReferenceNumber =
             string.IsNullOrWhiteSpace(referenceNumber)
