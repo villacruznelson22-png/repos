@@ -16,8 +16,8 @@ public class PaymentTests
             PaymentMethod.GCash,
             new Money(1500.00m),
             paidAt,
-            " GC-12345 ",
-            " payment-key-001 ");
+            " payment-key-001 ",
+            " GC-12345 ");
 
         Assert.NotEqual(Guid.Empty, payment.Id);
         Assert.Equal(saleId, payment.SaleId);
