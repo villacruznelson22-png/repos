@@ -1,3 +1,4 @@
+using WholesalePOS.Domain.Entities;
 using WholesalePOS.Domain.Enums;
 using WholesalePOS.Domain.Exceptions;
 using WholesalePOS.Domain.ValueObjects;
