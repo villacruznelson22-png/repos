@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WholesalePOS.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using WholesalePOS.Infrastructure.Persistence;
 namespace WholesalePOS.Infrastructure.Migrations
 {
     [DbContext(typeof(WholesalePosDbContext))]
-    partial class WholesalePosDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261005063518_AddPayments")]
+    partial class AddPayments
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -317,11 +320,6 @@ namespace WholesalePOS.Infrastructure.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("IdempotencyKey")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.Property<int>("Method")
                         .HasColumnType("int");
 
@@ -336,10 +334,6 @@ namespace WholesalePOS.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("IdempotencyKey")
-                        .IsUnique()
-                        .HasDatabaseName("UX_Payments_IdempotencyKey");
 
                     b.HasIndex("SaleId");
 
