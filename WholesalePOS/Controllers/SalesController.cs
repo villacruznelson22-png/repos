@@ -1,4 +1,5 @@
 using MediatR;
+using WholesalePOS.Application.Common.Models;
 using Microsoft.AspNetCore.Mvc;
 using WholesalePOS.Api.Contracts.Sales;
 using WholesalePOS.Application.Sales.Commands.CancelSale;
@@ -7,6 +8,7 @@ using WholesalePOS.Application.Sales.Commands.ConfirmSale;
 using WholesalePOS.Application.Sales.Commands.CreateSale;
 using WholesalePOS.Application.Sales.Commands.UpdateSale;
 using WholesalePOS.Application.Sales.Queries.GetSaleById;
+using WholesalePOS.Application.Sales.Queries.GetSales;
 
 using ApplicationCheckoutPaymentRequest =
     WholesalePOS.Application.Sales.Commands.CheckoutSale.CheckoutPaymentRequest;
@@ -45,6 +47,18 @@ public class SalesController : ControllerBase
         await _sender.Send(updateCommand, cancellationToken);
 
         return NoContent();
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<PagedResult<SaleListItemDto>>> Get(
+        [FromQuery] GetSalesQuery query,
+        CancellationToken cancellationToken)
+    {
+        var sales = await _sender.Send(
+            query,
+            cancellationToken);
+
+        return Ok(sales);
     }
 
     [HttpGet("{id:guid}")]
