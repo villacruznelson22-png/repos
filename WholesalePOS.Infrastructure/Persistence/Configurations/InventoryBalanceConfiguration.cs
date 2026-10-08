@@ -21,20 +21,16 @@ public class InventoryBalanceConfiguration
 
         builder.Property(x => x.ProductId).IsRequired();
 
-        // BUSINESS RULE / DATA INTEGRITY:
-        // There must be exactly one current inventory balance per product.
         builder.HasIndex(x => x.ProductId).IsUnique();
 
         builder.Property(x => x.QuantityOnHand)
             .HasPrecision(18, 3)
             .IsRequired();
 
-        // Six decimal places are retained internally for inventory valuation.
         builder.Property(x => x.InventoryValue)
             .HasPrecision(19, 6)
             .IsRequired();
 
-        // InventoryCost is a domain value object, but SQL stores its decimal value.
         builder.Property(x => x.AverageUnitCost)
             .HasConversion(
                 new ValueConverter<InventoryCost, decimal>(
@@ -43,7 +39,9 @@ public class InventoryBalanceConfiguration
             .HasPrecision(19, 6)
             .IsRequired();
 
-        // Prevent deleting a Product while inventory state still references it.
+        builder.Property(x => x.Version)
+            .IsRowVersion();
+
         builder.HasOne<Product>()
             .WithMany()
             .HasForeignKey(x => x.ProductId)
