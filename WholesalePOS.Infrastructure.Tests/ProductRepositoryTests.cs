@@ -1,0 +1,126 @@
+using WholesalePOS.Application.Products.Queries.GetProducts;
+using WholesalePOS.Domain.Entities;
+using WholesalePOS.Domain.ValueObjects;
+using WholesalePOS.Infrastructure.Persistence.Repositories;
+
+namespace WholesalePOS.Infrastructure.Tests;
+
+public class ProductRepositoryTests
+{
+    [Fact]
+    [TestDatabase]
+    public async Task GetPagedAsync_ShouldSearchByProductName()
+    {
+        var factory = new TestDbContextFactory();
+
+        await using var context = factory.Create();
+
+        var coke = CreateProduct("Coca Cola 1.5L", 75);
+        var sprite = CreateProduct("Sprite 1.5L", 70);
+
+        context.Products.AddRange(coke, sprite);
+
+        await context.SaveChangesAsync();
+
+        var repository = new ProductRepository(context);
+
+        var result = await repository.GetPagedAsync(
+            new GetProductsQuery
+            {
+                Search = "coca",
+                PageNumber = 1,
+                PageSize = 20
+            },
+            CancellationToken.None);
+
+        var item = Assert.Single(result.Items);
+
+        Assert.Equal(1, result.TotalCount);
+        Assert.Equal(coke.Id, item.Id);
+        Assert.Equal("Coca Cola 1.5L", item.Name);
+        Assert.Equal(75, item.SellingPrice);
+    }
+
+    [Fact]
+    [TestDatabase]
+    public async Task GetPagedAsync_ShouldFilterActiveProducts()
+    {
+        var factory = new TestDbContextFactory();
+
+        await using var context = factory.Create();
+
+        var active = CreateProduct("Active Product", 100);
+        var inactive = CreateProduct("Inactive Product", 200);
+        inactive.Deactivate();
+
+        context.Products.AddRange(active, inactive);
+
+        await context.SaveChangesAsync();
+
+        var repository = new ProductRepository(context);
+
+        var result = await repository.GetPagedAsync(
+            new GetProductsQuery
+            {
+                ActiveOnly = true,
+                PageNumber = 1,
+                PageSize = 20
+            },
+            CancellationToken.None);
+
+        var item = Assert.Single(result.Items);
+
+        Assert.Equal(1, result.TotalCount);
+        Assert.Equal(active.Id, item.Id);
+        Assert.True(item.SellingPrice == 100);
+    }
+
+    [Fact]
+    [TestDatabase]
+    public async Task GetPagedAsync_ShouldApplyPaginationAndReturnTotalCount()
+    {
+        var factory = new TestDbContextFactory();
+
+        await using var context = factory.Create();
+
+        for (var i = 1; i <= 5; i++)
+        {
+            context.Products.Add(
+                CreateProduct(
+                    $"Product {i:00}",
+                    i * 10));
+        }
+
+        await context.SaveChangesAsync();
+
+        var repository = new ProductRepository(context);
+
+        var result = await repository.GetPagedAsync(
+            new GetProductsQuery
+            {
+                PageNumber = 2,
+                PageSize = 2
+            },
+            CancellationToken.None);
+
+        Assert.Equal(5, result.TotalCount);
+        Assert.Equal(2, result.Items.Count);
+        Assert.Equal(2, result.PageNumber);
+        Assert.Equal(2, result.PageSize);
+        Assert.Equal(3, result.TotalPages);
+
+        Assert.Equal("Product 03", result.Items[0].Name);
+        Assert.Equal("Product 04", result.Items[1].Name);
+    }
+
+    private static Product CreateProduct(
+        string name,
+        decimal sellingPrice)
+    {
+        return new Product(
+            name,
+            null,
+            new Money(sellingPrice + 10),
+            new Money(sellingPrice));
+    }
+}
