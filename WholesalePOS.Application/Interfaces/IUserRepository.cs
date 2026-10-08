@@ -16,6 +16,11 @@ public interface IUserRepository
         string tokenHash,
         CancellationToken cancellationToken);
 
+    Task<bool> RevokeRefreshTokenAsync(
+        Guid refreshTokenId,
+        DateTime utcNow,
+        CancellationToken cancellationToken);
+
     Task AddAsync(
         User user,
         CancellationToken cancellationToken);
