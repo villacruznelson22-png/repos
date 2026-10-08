@@ -1,0 +1,26 @@
+using WholesalePOS.Domain.Entities;
+
+namespace WholesalePOS.Application.Interfaces;
+
+public interface IUserRepository
+{
+    Task<User?> GetByUsernameAsync(
+        string username,
+        CancellationToken cancellationToken);
+
+    Task<User?> GetByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken);
+
+    Task<RefreshToken?> GetRefreshTokenAsync(
+        string tokenHash,
+        CancellationToken cancellationToken);
+
+    Task AddAsync(
+        User user,
+        CancellationToken cancellationToken);
+
+    Task AddRefreshTokenAsync(
+        RefreshToken refreshToken,
+        CancellationToken cancellationToken);
+}
