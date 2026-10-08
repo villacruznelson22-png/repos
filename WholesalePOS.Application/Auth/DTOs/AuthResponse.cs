@@ -14,4 +14,5 @@ public sealed class UserSummaryDto
     public Guid Id { get; init; }
     public string Username { get; init; } = string.Empty;
     public string DisplayName { get; init; } = string.Empty;
+    public IReadOnlyCollection<string> Roles { get; init; } = [];
 }
