@@ -69,11 +69,13 @@ public sealed class RefreshCommandHandler : IRequestHandler<RefreshCommand, Auth
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        var accessToken = _tokens.CreateAccessToken(user);
+
         return new AuthResponse
         {
-            AccessToken = _tokens.CreateAccessToken(user),
+            AccessToken = accessToken.Token,
             RefreshToken = newRefreshToken,
-            AccessTokenExpiresAtUtc = DateTime.UtcNow.AddMinutes(30),
+            AccessTokenExpiresAtUtc = accessToken.ExpiresAtUtc,
             RefreshTokenExpiresAtUtc = newRefreshEntity.ExpiresAt,
             User = new UserSummaryDto
             {
