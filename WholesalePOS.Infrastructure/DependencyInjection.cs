@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using WholesalePOS.Application.Interfaces;
+using WholesalePOS.Infrastructure.Security;
 using WholesalePOS.Domain.Services;
 using WholesalePOS.Infrastructure.Imports.Psgc;
 using WholesalePOS.Infrastructure.Persistence;
@@ -30,6 +31,9 @@ public static class DependencyInjection
         services.AddScoped<IDeliveryReceiptRepository, DeliveryReceiptRepository>();
 
         services.AddScoped<ISaleRepository, SaleRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IPasswordService, PasswordService>();
+        services.AddScoped<ITokenService, JwtTokenService>();
 
 
         services.AddScoped<InventoryService>();
