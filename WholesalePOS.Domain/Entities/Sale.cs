@@ -1,4 +1,4 @@
-﻿using WholesalePOS.Domain.Enums;
+using WholesalePOS.Domain.Enums;
 using WholesalePOS.Domain.Exceptions;
 using WholesalePOS.Domain.ValueObjects;
 
@@ -27,6 +27,12 @@ public class Sale
     public DateTime? CancelledAt { get; private set; }
 
     public DateTime? VoidedAt { get; private set; }
+
+    /// <summary>
+    /// Idempotency key of the checkout operation that completed this sale.
+    /// It is null until checkout succeeds.
+    /// </summary>
+    public string? CheckoutIdempotencyKey { get; private set; }
 
     public Customer? Customer { get; private set; }
 
@@ -57,6 +63,14 @@ public class Sale
 
         ChangeReferenceNumber(referenceNumber);
         ChangeNotes(notes);
+    }
+
+    public Money GetTotalAmount()
+    {
+        var total = Lines.Sum(
+            line => line.UnitSellingPrice.Value * line.Quantity);
+
+        return new Money(total);
     }
 
     public void ChangeOccurredAt(DateTime occurredAt)
@@ -191,6 +205,29 @@ public class Sale
         }
 
         Payments.Add(payment);
+    }
+
+    public void SetCheckoutIdempotencyKey(string idempotencyKey)
+    {
+        if (string.IsNullOrWhiteSpace(idempotencyKey))
+            throw new SaleDomainException(
+                "Checkout idempotency key cannot be empty.");
+
+        if (CheckoutIdempotencyKey is not null)
+        {
+            if (!string.Equals(
+                    CheckoutIdempotencyKey,
+                    idempotencyKey.Trim(),
+                    StringComparison.Ordinal))
+            {
+                throw new SaleDomainException(
+                    "Checkout idempotency key has already been assigned.");
+            }
+
+            return;
+        }
+
+        CheckoutIdempotencyKey = idempotencyKey.Trim();
     }
 
     public void Confirm()
