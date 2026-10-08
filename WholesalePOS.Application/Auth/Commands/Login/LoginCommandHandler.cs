@@ -55,11 +55,13 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResp
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        var accessToken = _tokens.CreateAccessToken(user);
+
         return new AuthResponse
         {
-            AccessToken = _tokens.CreateAccessToken(user),
+            AccessToken = accessToken.Token,
             RefreshToken = refreshToken,
-            AccessTokenExpiresAtUtc = DateTime.UtcNow.AddMinutes(30),
+            AccessTokenExpiresAtUtc = accessToken.ExpiresAtUtc,
             RefreshTokenExpiresAtUtc = refreshTokenEntity.ExpiresAt,
             User = new UserSummaryDto
             {
