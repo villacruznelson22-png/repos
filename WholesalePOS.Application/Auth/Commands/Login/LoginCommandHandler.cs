@@ -35,11 +35,14 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResp
             username,
             cancellationToken);
 
-        if (user is null || !_passwords.Verify(request.Password, user.PasswordHash))
-            throw AuthenticationErrors.InvalidCredentials();
+        var passwordValid = _passwords.Verify(
+            request.Password,
+            user?.PasswordHash ?? string.Empty);
 
-        if (!user.IsActive)
-            throw AuthenticationErrors.InactiveUser();
+        // Keep login failures generic so account existence and inactive status
+        // are not disclosed to an unauthenticated caller.
+        if (user is null || !passwordValid || !user.IsActive)
+            throw AuthenticationErrors.InvalidCredentials();
 
         user.RecordLogin();
 
