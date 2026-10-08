@@ -72,7 +72,7 @@ public class ProductRepositoryTests
 
         Assert.Equal(1, result.TotalCount);
         Assert.Equal(active.Id, item.Id);
-        Assert.True(item.SellingPrice == 100);
+        Assert.Equal(100, item.SellingPrice);
     }
 
     [Fact]
