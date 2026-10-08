@@ -32,7 +32,9 @@ public sealed class RefreshCommandHandler : IRequestHandler<RefreshCommand, Auth
             hash,
             cancellationToken);
 
-        if (current is null || !current.IsActive(DateTime.UtcNow))
+        var now = DateTime.UtcNow;
+
+        if (current is null || !current.IsActive(now))
             throw AuthenticationErrors.InvalidRefreshToken();
 
         var user = await _users.GetByIdAsync(
@@ -45,7 +47,15 @@ public sealed class RefreshCommandHandler : IRequestHandler<RefreshCommand, Auth
         if (!user.IsActive)
             throw AuthenticationErrors.InactiveUser();
 
-        current.Revoke();
+        // Atomically consume the refresh token. This closes the race where
+        // two concurrent refresh requests could otherwise both rotate it.
+        var revoked = await _users.RevokeRefreshTokenAsync(
+            current.Id,
+            now,
+            cancellationToken);
+
+        if (!revoked)
+            throw AuthenticationErrors.InvalidRefreshToken();
 
         var newRefreshToken = _tokens.CreateRefreshToken();
         var newRefreshEntity = new RefreshToken(
