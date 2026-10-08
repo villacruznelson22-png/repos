@@ -65,4 +65,57 @@ public class LoginCommandHandlerTests
         await Assert.ThrowsAsync<WholesalePOS.Application.Common.Exceptions.UnauthorizedException>(
             () => handler.Handle(new LoginCommand("nelson", "wrong"), CancellationToken.None));
     }
+    
+    [Fact]
+    public async Task Handle_ShouldRejectUnknownUser()
+    {
+        var users = new Mock<IUserRepository>();
+        users.Setup(x => x.GetByUsernameAsync(
+                "unknown",
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        var passwords = new Mock<IPasswordService>();
+        passwords.Setup(x => x.Verify("password", string.Empty))
+            .Returns(false);
+
+        var handler = new LoginCommandHandler(
+            users.Object,
+            passwords.Object,
+            Mock.Of<ITokenService>(),
+            Mock.Of<IUnitOfWork>());
+
+        await Assert.ThrowsAsync<WholesalePOS.Application.Common.Exceptions.UnauthorizedException>(
+            () => handler.Handle(
+                new LoginCommand("unknown", "password"),
+                CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Handle_ShouldRejectInactiveUserWithGenericCredentialsError()
+    {
+        var user = new User("nelson", "Nelson", "hash");
+        user.Deactivate();
+
+        var users = new Mock<IUserRepository>();
+        users.Setup(x => x.GetByUsernameAsync(
+                "nelson",
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        var passwords = new Mock<IPasswordService>();
+        passwords.Setup(x => x.Verify("password", "hash"))
+            .Returns(true);
+
+        var handler = new LoginCommandHandler(
+            users.Object,
+            passwords.Object,
+            Mock.Of<ITokenService>(),
+            Mock.Of<IUnitOfWork>());
+
+        await Assert.ThrowsAsync<WholesalePOS.Application.Common.Exceptions.UnauthorizedException>(
+            () => handler.Handle(
+                new LoginCommand("nelson", "password"),
+                CancellationToken.None));
+    }
 }
