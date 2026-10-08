@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using WholesalePOS.Api.Services;
 using WholesalePOS.Application;
+using WholesalePOS.Application.Interfaces;
 using WholesalePOS.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
