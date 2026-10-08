@@ -47,7 +47,8 @@ public class GetSaleByIdHandlerTests
                 PaymentMethod.Cash,
                 new Money(140),
                 DateTime.UtcNow,
-                "payment-001"));
+                "payment-001",
+                "REF-001"));
 
         saleRepositoryMock
             .Setup(x => x.GetByIdWithLinesAsync(
@@ -77,7 +78,7 @@ public class GetSaleByIdHandlerTests
         var payment = Assert.Single(result.Payments);
         Assert.Equal((int)PaymentMethod.Cash, payment.Method);
         Assert.Equal(140, payment.Amount);
-        Assert.Equal("payment-001", payment.ReferenceNumber);
+        Assert.Equal("REF-001", payment.ReferenceNumber);
     }
 
     [Fact]
