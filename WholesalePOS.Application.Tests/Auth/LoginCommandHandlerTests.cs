@@ -21,7 +21,7 @@ public class LoginCommandHandlerTests
         passwords.Setup(x => x.Verify("password", "hash")).Returns(true);
 
         var tokens = new Mock<ITokenService>();
-        tokens.Setup(x => x.CreateAccessToken(user)).Returns("access");
+        tokens.Setup(x => x.CreateAccessToken(user)).Returns(new AccessTokenResult("access", DateTime.UtcNow.AddMinutes(30)));
         tokens.Setup(x => x.CreateRefreshToken()).Returns("refresh");
         tokens.Setup(x => x.HashRefreshToken("refresh")).Returns("refresh-hash");
         tokens.Setup(x => x.GetRefreshTokenExpiryUtc()).Returns(DateTime.UtcNow.AddDays(7));
