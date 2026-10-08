@@ -31,6 +31,7 @@ namespace WholesalePOS.Api.Middleware
                     NotFoundException => StatusCodes.Status404NotFound,
 
                     ConflictException => StatusCodes.Status409Conflict,
+                    UnauthorizedException => StatusCodes.Status401Unauthorized,
 
                     _ => StatusCodes.Status500InternalServerError
                 };
@@ -53,6 +54,7 @@ namespace WholesalePOS.Api.Middleware
         {
             return statusCode switch
             {
+                StatusCodes.Status401Unauthorized => "Unauthorized",
                 StatusCodes.Status404NotFound => "Resource Not Found",
                 StatusCodes.Status409Conflict => "Conflict",
                 StatusCodes.Status400BadRequest => "Validation Failed",
