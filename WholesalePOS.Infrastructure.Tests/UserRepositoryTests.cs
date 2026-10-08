@@ -49,4 +49,38 @@ public class UserRepositoryTests
         Assert.NotNull(result);
         Assert.Equal(token.Id, result.Id);
     }
+
+    [Fact]
+    [TestDatabase]
+    public async Task RevokeRefreshTokenAsync_ShouldConsumeTokenOnlyOnce()
+    {
+        var factory = new TestDbContextFactory();
+        await using var context = factory.Create();
+
+        var user = new User("nelson", "Nelson", "hash");
+        var token = new RefreshToken(
+            user.Id,
+            "refresh-hash",
+            DateTime.UtcNow.AddDays(1));
+
+        context.Users.Add(user);
+        context.RefreshTokens.Add(token);
+        await context.SaveChangesAsync();
+
+        var repository = new UserRepository(context);
+        var now = DateTime.UtcNow;
+
+        var first = await repository.RevokeRefreshTokenAsync(
+            token.Id,
+            now,
+            CancellationToken.None);
+
+        var second = await repository.RevokeRefreshTokenAsync(
+            token.Id,
+            now,
+            CancellationToken.None);
+
+        Assert.True(first);
+        Assert.False(second);
+    }
 }
