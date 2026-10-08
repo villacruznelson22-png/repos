@@ -42,7 +42,7 @@ public class RefreshCommandHandlerTests
         tokens.Setup(x => x.GetRefreshTokenExpiryUtc())
             .Returns(DateTime.UtcNow.AddDays(7));
         tokens.Setup(x => x.CreateAccessToken(user))
-            .Returns("access");
+            .Returns(new AccessTokenResult("access", DateTime.UtcNow.AddMinutes(30)));
 
         var handler = new RefreshCommandHandler(
             users.Object,
