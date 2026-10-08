@@ -4,6 +4,9 @@ using WholesalePOS.Api.Contracts.Sales;
 using WholesalePOS.Application.Sales.Commands.CheckoutSale;
 using WholesalePOS.Application.Sales.Commands.CreateSale;
 
+using ApplicationCheckoutPaymentRequest =
+    WholesalePOS.Application.Sales.Commands.CheckoutSale.CheckoutPaymentRequest;
+
 namespace WholesalePOS.Api.Controllers;
 
 [ApiController]
@@ -41,7 +44,7 @@ public class SalesController : ControllerBase
             saleId,
             request.IdempotencyKey,
             request.Payments
-                .Select(payment => new CheckoutPaymentRequest(
+                .Select(payment => new ApplicationCheckoutPaymentRequest(
                     payment.Method,
                     payment.Amount,
                     payment.IdempotencyKey,

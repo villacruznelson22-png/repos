@@ -1,3 +1,4 @@
+using WholesalePOS.Application.Sales.Commands.CheckoutSale;
 using WholesalePOS.Domain.Enums;
 
 namespace WholesalePOS.Application.Tests.Sales.Commands.CheckoutSale;
