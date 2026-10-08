@@ -27,12 +27,17 @@ public class GetSaleByIdHandlerTests
             referenceNumber: "SALE-001",
             notes: "Test sale");
 
-        sale.AddLine(
-            new SaleLine(
-                sale.Id,
-                product.Id,
-                2,
-                new Money(70)));
+        var line = new SaleLine(
+            sale.Id,
+            product.Id,
+            2,
+            new Money(70));
+
+        typeof(SaleLine)
+            .GetProperty(nameof(SaleLine.Product))!
+            .SetValue(line, product);
+
+        sale.AddLine(line);
 
         sale.Confirm();
 
