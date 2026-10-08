@@ -1,7 +1,9 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using WholesalePOS.Api.Contracts.Sales;
+using WholesalePOS.Application.Sales.Commands.CancelSale;
 using WholesalePOS.Application.Sales.Commands.CheckoutSale;
+using WholesalePOS.Application.Sales.Commands.ConfirmSale;
 using WholesalePOS.Application.Sales.Commands.CreateSale;
 using WholesalePOS.Application.Sales.Commands.UpdateSale;
 using WholesalePOS.Application.Sales.Queries.GetSaleById;
@@ -27,13 +29,9 @@ public class SalesController : ControllerBase
         [FromBody] CreateSaleCommand command,
         CancellationToken cancellationToken)
     {
-        var id = await _sender.Send(
-            command,
-            cancellationToken);
+        var id = await _sender.Send(command, cancellationToken);
 
-        return Created(
-            $"/api/sales/{id}",
-            id);
+        return Created($"/api/sales/{id}", id);
     }
 
     [HttpPut("{saleId:guid}")]
@@ -42,14 +40,9 @@ public class SalesController : ControllerBase
         [FromBody] UpdateSaleCommand command,
         CancellationToken cancellationToken)
     {
-        var updateCommand = command with
-        {
-            SaleId = saleId
-        };
+        var updateCommand = command with { SaleId = saleId };
 
-        await _sender.Send(
-            updateCommand,
-            cancellationToken);
+        await _sender.Send(updateCommand, cancellationToken);
 
         return NoContent();
     }
@@ -64,6 +57,30 @@ public class SalesController : ControllerBase
             cancellationToken);
 
         return Ok(sale);
+    }
+
+    [HttpPost("{saleId:guid}/confirm")]
+    public async Task<IActionResult> Confirm(
+        Guid saleId,
+        CancellationToken cancellationToken)
+    {
+        await _sender.Send(
+            new ConfirmSaleCommand(saleId),
+            cancellationToken);
+
+        return NoContent();
+    }
+
+    [HttpPost("{saleId:guid}/cancel")]
+    public async Task<IActionResult> Cancel(
+        Guid saleId,
+        CancellationToken cancellationToken)
+    {
+        await _sender.Send(
+            new CancelSaleCommand(saleId),
+            cancellationToken);
+
+        return NoContent();
     }
 
     [HttpPost("{saleId:guid}/checkout")]
@@ -84,9 +101,7 @@ public class SalesController : ControllerBase
                 .ToList(),
             request.AllowNegativeInventory);
 
-        await _sender.Send(
-            command,
-            cancellationToken);
+        await _sender.Send(command, cancellationToken);
 
         return NoContent();
     }
