@@ -1,0 +1,192 @@
+using MediatR;
+using WholesalePOS.Application.Common.Errors;
+using WholesalePOS.Application.Interfaces;
+using WholesalePOS.Domain.Entities;
+using WholesalePOS.Domain.Enums;
+using WholesalePOS.Domain.ValueObjects;
+
+namespace WholesalePOS.Application.Sales.Commands.CheckoutSale;
+
+public sealed class CheckoutSaleHandler
+    : IRequestHandler<CheckoutSaleCommand>
+{
+    private readonly ISaleRepository _saleRepository;
+    private readonly IInventoryBalanceRepository _inventoryBalanceRepository;
+    private readonly IInventoryTransactionRepository _inventoryTransactionRepository;
+    private readonly IUnitOfWork _unitOfWork;
+
+    public CheckoutSaleHandler(
+        ISaleRepository saleRepository,
+        IInventoryBalanceRepository inventoryBalanceRepository,
+        IInventoryTransactionRepository inventoryTransactionRepository,
+        IUnitOfWork unitOfWork)
+    {
+        _saleRepository = saleRepository;
+        _inventoryBalanceRepository = inventoryBalanceRepository;
+        _inventoryTransactionRepository = inventoryTransactionRepository;
+        _unitOfWork = unitOfWork;
+    }
+
+    public async Task Handle(
+        CheckoutSaleCommand request,
+        CancellationToken cancellationToken)
+    {
+        var sale = await _saleRepository.GetByIdWithLinesAsync(
+            request.SaleId,
+            cancellationToken);
+
+        if (sale is null)
+            throw SaleErrors.NotFound(request.SaleId);
+
+        var checkoutKey = request.IdempotencyKey.Trim();
+
+        // A retry after a successful checkout is treated as an idempotent
+        // replay only when the same checkout key is supplied.
+        if (sale.Status == SaleStatus.Completed)
+        {
+            if (string.Equals(
+                    sale.CheckoutIdempotencyKey,
+                    checkoutKey,
+                    StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            throw CheckoutErrors.AlreadyProcessed(sale.Id);
+        }
+
+        if (sale.CheckoutIdempotencyKey is not null &&
+            !string.Equals(
+                sale.CheckoutIdempotencyKey,
+                checkoutKey,
+                StringComparison.Ordinal))
+        {
+            throw CheckoutErrors.IdempotencyKeyConflict();
+        }
+
+        var paymentKeys = request.Payments
+            .Select(x => x.IdempotencyKey.Trim())
+            .ToList();
+
+        if (paymentKeys.Count != paymentKeys.Distinct(
+                StringComparer.Ordinal).Count())
+        {
+            var duplicateKey = paymentKeys
+                .GroupBy(x => x, StringComparer.Ordinal)
+                .First(x => x.Count() > 1)
+                .Key;
+
+            throw CheckoutErrors.DuplicatePaymentIdempotencyKey(
+                duplicateKey);
+        }
+
+        var saleTotal = sale.GetTotalAmount().Value;
+
+        var existingPaymentTotal = sale.Payments.Sum(
+            x => x.Amount.Value);
+
+        var requestedPaymentTotal = request.Payments.Sum(
+            x => x.Amount);
+
+        var paymentTotal =
+            existingPaymentTotal + requestedPaymentTotal;
+
+        if (paymentTotal != saleTotal)
+        {
+            throw CheckoutErrors.PaymentTotalMismatch(
+                saleTotal,
+                paymentTotal);
+        }
+
+        // Inventory is resolved and consumed before the sale is completed.
+        // Everything is tracked in the same DbContext and persisted by one
+        // SaveChanges call, so the operation remains atomic.
+        foreach (var line in sale.Lines)
+        {
+            var balance =
+                await _inventoryBalanceRepository.GetByProductIdAsync(
+                    line.ProductId,
+                    cancellationToken);
+
+            if (balance is null)
+            {
+                if (!request.AllowNegativeInventory)
+                {
+                    throw CheckoutErrors.InsufficientInventory(
+                        line.ProductId);
+                }
+
+                if (line.Product.FallbackInventoryCost is null)
+                {
+                    throw CheckoutErrors.InventoryCostUnavailable(
+                        line.ProductId);
+                }
+
+                balance = InventoryBalance.CreateEmpty(
+                    line.ProductId);
+
+                await _inventoryBalanceRepository.AddAsync(
+                    balance,
+                    cancellationToken);
+            }
+
+            InventoryCost? fallbackCost =
+                line.Product.FallbackInventoryCost;
+
+            if (!request.AllowNegativeInventory &&
+                line.Quantity > balance.QuantityOnHand)
+            {
+                throw CheckoutErrors.InsufficientInventory(
+                    line.ProductId);
+            }
+
+            if (request.AllowNegativeInventory &&
+                line.Quantity > balance.QuantityOnHand &&
+                balance.AverageUnitCost.Value <= 0 &&
+                fallbackCost is null)
+            {
+                throw CheckoutErrors.InventoryCostUnavailable(
+                    line.ProductId);
+            }
+
+            var unitCost = balance.Consume(
+                line.Quantity,
+                request.AllowNegativeInventory,
+                fallbackCost);
+
+            line.SetUnitCost(unitCost);
+
+            var transaction = new InventoryTransaction(
+                line.ProductId,
+                InventoryTransactionType.Sale,
+                InventoryTransactionDirection.Decrease,
+                new InventoryTransactionQuantity(line.Quantity),
+                unitCost,
+                referenceType: "Sale",
+                referenceId: sale.Id);
+
+            await _inventoryTransactionRepository.AddAsync(
+                transaction,
+                cancellationToken);
+        }
+
+        foreach (var paymentRequest in request.Payments)
+        {
+            var payment = new Payment(
+                sale.Id,
+                paymentRequest.Method,
+                new Money(paymentRequest.Amount),
+                DateTime.UtcNow,
+                paymentRequest.IdempotencyKey,
+                paymentRequest.ReferenceNumber);
+
+            sale.AddPayment(payment);
+        }
+
+        sale.SetCheckoutIdempotencyKey(checkoutKey);
+        sale.Complete();
+
+        await _unitOfWork.SaveChangesAsync(
+            cancellationToken);
+    }
+}
