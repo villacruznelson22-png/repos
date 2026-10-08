@@ -4,6 +4,7 @@ using WholesalePOS.Application.Common.Models;
 using WholesalePOS.Application.Products.Commands.CreateProduct;
 using WholesalePOS.Application.Products.Commands.UpdateSellingPrice;
 using WholesalePOS.Application.Products.Queries.GetProductById;
+using WholesalePOS.Application.Products.Queries.GetProductByBarcode;
 using WholesalePOS.Application.Products.Queries.GetProducts;
 
 namespace WholesalePOS.Api.Controllers
@@ -44,6 +45,18 @@ namespace WholesalePOS.Api.Controllers
         }
 
      
+
+        [HttpGet("barcode/{barcode}")]
+        public async Task<ActionResult<ProductDto>> GetByBarcode(
+            string barcode,
+            CancellationToken cancellationToken)
+        {
+            var product = await _sender.Send(
+                new GetProductByBarcodeQuery(barcode),
+                cancellationToken);
+
+            return Ok(product);
+        }
 
         [HttpGet("{id:guid}")]
         public async Task<ActionResult<ProductDto>> GetById(Guid id)

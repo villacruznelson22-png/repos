@@ -10,6 +10,9 @@ namespace WholesalePOS.Application.Common.Errors
         public static NotFoundException NotFound(Guid id)
         => new($"Product '{id}' was not found.");
 
+        public static NotFoundException NotFoundByBarcode(string barcode)
+            => new($"Product with barcode '{barcode}' was not found.");
+
         public static ConflictException DuplicateBarcode(string barcode)
             => new($"Barcode '{barcode}' already exists.");
     }
