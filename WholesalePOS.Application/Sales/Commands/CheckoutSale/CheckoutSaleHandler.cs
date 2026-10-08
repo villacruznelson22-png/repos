@@ -195,8 +195,8 @@ public sealed class CheckoutSaleHandler
             sale.AddPayment(payment);
         }
 
-        sale.SetCheckoutIdempotencyKey(checkoutKey);
         sale.Complete();
+        sale.SetCheckoutIdempotencyKey(checkoutKey);
 
         await _unitOfWork.SaveChangesAsync(
             cancellationToken);
