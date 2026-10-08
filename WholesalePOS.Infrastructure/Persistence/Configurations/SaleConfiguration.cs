@@ -38,6 +38,9 @@ public class SaleConfiguration
             .IsUnique()
             .HasFilter("[CheckoutIdempotencyKey] IS NOT NULL");
 
+        builder.Property(x => x.Version)
+            .IsRowVersion();
+
         builder.HasOne(x => x.Customer)
             .WithMany()
             .HasForeignKey(x => x.CustomerId)
