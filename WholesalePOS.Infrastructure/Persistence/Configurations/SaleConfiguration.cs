@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using WholesalePOS.Domain.Entities;
 
@@ -30,6 +30,13 @@ public class SaleConfiguration
 
         builder.Property(x => x.CreatedAt)
             .IsRequired();
+
+        builder.Property(x => x.CheckoutIdempotencyKey)
+            .HasMaxLength(100);
+
+        builder.HasIndex(x => x.CheckoutIdempotencyKey)
+            .IsUnique()
+            .HasFilter("[CheckoutIdempotencyKey] IS NOT NULL");
 
         builder.HasOne(x => x.Customer)
             .WithMany()
