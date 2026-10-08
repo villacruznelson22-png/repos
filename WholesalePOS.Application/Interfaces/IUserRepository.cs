@@ -21,6 +21,10 @@ public interface IUserRepository
         DateTime utcNow,
         CancellationToken cancellationToken);
 
+    Task<Role?> GetRoleByNameAsync(
+        string name,
+        CancellationToken cancellationToken);
+
     Task AddAsync(
         User user,
         CancellationToken cancellationToken);

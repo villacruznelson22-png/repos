@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WholesalePOS.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using WholesalePOS.Infrastructure.Persistence;
 namespace WholesalePOS.Infrastructure.Migrations
 {
     [DbContext(typeof(WholesalePosDbContext))]
-    partial class WholesalePosDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261008064421_AddAuthenticationFoundation")]
+    partial class AddAuthenticationFoundation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,21 +24,6 @@ namespace WholesalePOS.Infrastructure.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("UserRoles", b =>
-                {
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("RoleId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("UserId", "RoleId");
-
-                    b.HasIndex("RoleId");
-
-                    b.ToTable("UserRoles", (string)null);
-                });
 
             modelBuilder.Entity("WholesalePOS.Domain.Entities.Barangay", b =>
                 {
@@ -565,47 +553,6 @@ namespace WholesalePOS.Infrastructure.Migrations
                     b.ToTable("Regions", (string)null);
                 });
 
-            modelBuilder.Entity("WholesalePOS.Domain.Entities.Role", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Name")
-                        .IsUnique();
-
-                    b.ToTable("Roles", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("8f4d9b8a-1d1b-4f90-8a6a-000000000001"),
-                            Name = "Admin"
-                        },
-                        new
-                        {
-                            Id = new Guid("8f4d9b8a-1d1b-4f90-8a6a-000000000002"),
-                            Name = "Manager"
-                        },
-                        new
-                        {
-                            Id = new Guid("8f4d9b8a-1d1b-4f90-8a6a-000000000003"),
-                            Name = "Cashier"
-                        },
-                        new
-                        {
-                            Id = new Guid("8f4d9b8a-1d1b-4f90-8a6a-000000000004"),
-                            Name = "InventoryClerk"
-                        });
-                });
-
             modelBuilder.Entity("WholesalePOS.Domain.Entities.Sale", b =>
                 {
                     b.Property<Guid>("Id")
@@ -776,21 +723,6 @@ namespace WholesalePOS.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Users", (string)null);
-                });
-
-            modelBuilder.Entity("UserRoles", b =>
-                {
-                    b.HasOne("WholesalePOS.Domain.Entities.Role", null)
-                        .WithMany()
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("WholesalePOS.Domain.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("WholesalePOS.Domain.Entities.Barangay", b =>

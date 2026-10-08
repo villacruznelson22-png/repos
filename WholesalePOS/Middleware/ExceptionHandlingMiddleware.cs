@@ -32,6 +32,7 @@ namespace WholesalePOS.Api.Middleware
 
                     ConflictException => StatusCodes.Status409Conflict,
                     UnauthorizedException => StatusCodes.Status401Unauthorized,
+                    ForbiddenException => StatusCodes.Status403Forbidden,
 
                     _ => StatusCodes.Status500InternalServerError
                 };
@@ -56,6 +57,7 @@ namespace WholesalePOS.Api.Middleware
             {
                 StatusCodes.Status401Unauthorized => "Unauthorized",
                 StatusCodes.Status404NotFound => "Resource Not Found",
+                StatusCodes.Status403Forbidden => "Forbidden",
                 StatusCodes.Status409Conflict => "Conflict",
                 StatusCodes.Status400BadRequest => "Validation Failed",
                 _ => "Server Error"
