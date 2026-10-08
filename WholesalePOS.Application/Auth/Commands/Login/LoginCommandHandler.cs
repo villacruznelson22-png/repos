@@ -39,8 +39,6 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResp
             request.Password,
             user?.PasswordHash ?? string.Empty);
 
-        // Keep login failures generic so account existence and inactive status
-        // are not disclosed to an unauthenticated caller.
         if (user is null || !passwordValid || !user.IsActive)
             throw AuthenticationErrors.InvalidCredentials();
 
@@ -70,7 +68,8 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResp
             {
                 Id = user.Id,
                 Username = user.Username,
-                DisplayName = user.DisplayName
+                DisplayName = user.DisplayName,
+                Roles = user.Roles.Select(x => x.Name).OrderBy(x => x).ToArray()
             }
         };
     }
