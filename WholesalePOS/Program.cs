@@ -4,19 +4,18 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using WholesalePOS.Api.Services;
 using WholesalePOS.Application;
+using WholesalePOS.Application.Authorization;
 using WholesalePOS.Application.Interfaces;
+using WholesalePOS.Domain.Common;
 using WholesalePOS.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// MVC
 builder.Services.AddControllers();
 
-// Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Authentication
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUserService>();
 
@@ -52,9 +51,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(
+        AuthorizationPolicies.AdminOnly,
+        policy => policy.RequireRole(RoleNames.Admin));
 
-// Application Layers
+    options.AddPolicy(
+        AuthorizationPolicies.ManagerOrAdmin,
+        policy => policy.RequireRole(
+            RoleNames.Admin,
+            RoleNames.Manager));
+});
+
 builder.Services
     .AddApplication()
     .AddInfrastructure(builder.Configuration);
