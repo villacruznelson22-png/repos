@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using WholesalePOS.Api.Contracts.Sales;
 using WholesalePOS.Application.Sales.Commands.CheckoutSale;
 using WholesalePOS.Application.Sales.Commands.CreateSale;
+using WholesalePOS.Application.Sales.Commands.UpdateSale;
 using WholesalePOS.Application.Sales.Queries.GetSaleById;
 
 using ApplicationCheckoutPaymentRequest =
@@ -33,6 +34,24 @@ public class SalesController : ControllerBase
         return Created(
             $"/api/sales/{id}",
             id);
+    }
+
+    [HttpPut("{saleId:guid}")]
+    public async Task<IActionResult> Update(
+        Guid saleId,
+        [FromBody] UpdateSaleCommand command,
+        CancellationToken cancellationToken)
+    {
+        var updateCommand = command with
+        {
+            SaleId = saleId
+        };
+
+        await _sender.Send(
+            updateCommand,
+            cancellationToken);
+
+        return NoContent();
     }
 
     [HttpGet("{id:guid}")]
