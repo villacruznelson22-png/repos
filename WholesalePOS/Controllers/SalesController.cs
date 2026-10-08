@@ -1,5 +1,7 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using WholesalePOS.Api.Contracts.Sales;
+using WholesalePOS.Application.Sales.Commands.CheckoutSale;
 using WholesalePOS.Application.Sales.Commands.CreateSale;
 
 namespace WholesalePOS.Api.Controllers;
@@ -27,5 +29,30 @@ public class SalesController : ControllerBase
         return Created(
             $"/api/sales/{id}",
             id);
+    }
+
+    [HttpPost("{saleId:guid}/checkout")]
+    public async Task<IActionResult> Checkout(
+        Guid saleId,
+        [FromBody] CheckoutSaleRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new CheckoutSaleCommand(
+            saleId,
+            request.IdempotencyKey,
+            request.Payments
+                .Select(payment => new CheckoutPaymentRequest(
+                    payment.Method,
+                    payment.Amount,
+                    payment.IdempotencyKey,
+                    payment.ReferenceNumber))
+                .ToList(),
+            request.AllowNegativeInventory);
+
+        await _sender.Send(
+            command,
+            cancellationToken);
+
+        return NoContent();
     }
 }
