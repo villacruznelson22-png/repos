@@ -11,15 +11,19 @@ namespace WholesalePOS.Infrastructure.Security;
 
 public sealed class JwtTokenService : ITokenService
 {
-    private readonly IConfiguration _configuration;
-    public JwtTokenService(IConfiguration configuration) => _configuration = configuration;
+    private const int AccessTokenLifetimeMinutes = 30;
 
-    public string CreateAccessToken(User user)
+    private readonly IConfiguration _configuration;
+
+    public JwtTokenService(IConfiguration configuration)
+        => _configuration = configuration;
+
+    public AccessTokenResult CreateAccessToken(User user)
     {
         var issuer = Required("Issuer");
         var audience = Required("Audience");
         var key = Required("Key");
-        var expires = DateTime.UtcNow.AddMinutes(30);
+        var expires = DateTime.UtcNow.AddMinutes(AccessTokenLifetimeMinutes);
 
         var claims = new[]
         {
@@ -33,9 +37,15 @@ public sealed class JwtTokenService : ITokenService
             SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
-            issuer, audience, claims, expires: expires, signingCredentials: credentials);
+            issuer,
+            audience,
+            claims,
+            expires: expires,
+            signingCredentials: credentials);
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        return new AccessTokenResult(
+            new JwtSecurityTokenHandler().WriteToken(token),
+            expires);
     }
 
     public string CreateRefreshToken() =>
@@ -44,12 +54,16 @@ public sealed class JwtTokenService : ITokenService
     public string HashRefreshToken(string refreshToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(refreshToken);
-        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(refreshToken)));
+
+        return Convert.ToHexString(
+            SHA256.HashData(Encoding.UTF8.GetBytes(refreshToken)));
     }
 
-    public DateTime GetRefreshTokenExpiryUtc() => DateTime.UtcNow.AddDays(7);
+    public DateTime GetRefreshTokenExpiryUtc() =>
+        DateTime.UtcNow.AddDays(7);
 
     private string Required(string name) =>
         _configuration[$"Jwt:{name}"]
-        ?? throw new InvalidOperationException($"Jwt:{name} configuration is required.");
+        ?? throw new InvalidOperationException(
+            $"Jwt:{name} configuration is required.");
 }
