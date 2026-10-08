@@ -11,6 +11,60 @@ public class SaleRepositoryTests
 {
     [Fact]
     [TestDatabase]
+    public async Task GetByIdWithLinesAsync_ShouldLoadCustomerLinesProductsAndPayments()
+    {
+        var factory = new TestDbContextFactory();
+
+        await using var context = factory.Create();
+
+        var customer = new Customer("Customer One");
+        var product = CreateProduct("Product", 100);
+
+        context.Customers.Add(customer);
+        context.Products.Add(product);
+
+        var sale = CreateSale(
+            product,
+            "SALE-DETAIL",
+            DateTime.UtcNow,
+            customer.Id);
+
+        sale.Confirm();
+
+        sale.AddPayment(
+            new Payment(
+                sale.Id,
+                PaymentMethod.Cash,
+                new Money(100),
+                DateTime.UtcNow,
+                "payment-001",
+                "REF-001"));
+
+        context.Sales.Add(sale);
+
+        await context.SaveChangesAsync();
+
+        var repository = new SaleRepository(context);
+
+        var result = await repository.GetByIdWithLinesAsync(
+            sale.Id,
+            CancellationToken.None);
+
+        Assert.NotNull(result);
+        Assert.NotNull(result.Customer);
+        Assert.Equal("Customer One", result.Customer!.Name);
+
+        var line = Assert.Single(result.Lines);
+        Assert.NotNull(line.Product);
+        Assert.Equal("Product", line.Product!.Name);
+
+        var payment = Assert.Single(result.Payments);
+        Assert.Equal(PaymentMethod.Cash, payment.Method);
+        Assert.Equal("REF-001", payment.ReferenceNumber);
+    }
+
+    [Fact]
+    [TestDatabase]
     public async Task GetPagedAsync_ShouldReturnPagedSalesWithCustomerAndCalculatedTotal()
     {
         var factory = new TestDbContextFactory();
