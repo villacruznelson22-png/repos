@@ -47,8 +47,6 @@ public sealed class RefreshCommandHandler : IRequestHandler<RefreshCommand, Auth
         if (!user.IsActive)
             throw AuthenticationErrors.InactiveUser();
 
-        // Atomically consume the refresh token. This closes the race where
-        // two concurrent refresh requests could otherwise both rotate it.
         var revoked = await _users.RevokeRefreshTokenAsync(
             current.Id,
             now,
@@ -81,7 +79,8 @@ public sealed class RefreshCommandHandler : IRequestHandler<RefreshCommand, Auth
             {
                 Id = user.Id,
                 Username = user.Username,
-                DisplayName = user.DisplayName
+                DisplayName = user.DisplayName,
+                Roles = user.Roles.Select(x => x.Name).OrderBy(x => x).ToArray()
             }
         };
     }
