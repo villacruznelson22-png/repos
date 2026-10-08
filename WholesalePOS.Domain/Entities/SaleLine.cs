@@ -1,4 +1,4 @@
-﻿using WholesalePOS.Domain.Exceptions;
+using WholesalePOS.Domain.Exceptions;
 using WholesalePOS.Domain.ValueObjects;
 
 namespace WholesalePOS.Domain.Entities;
@@ -64,6 +64,9 @@ public class SaleLine
         Quantity = quantity;
         UnitSellingPrice = unitSellingPrice;
     }
+
+    public Money GetTotalAmount()
+        => new(UnitSellingPrice.Value * Quantity);
 
     public void ChangeQuantity(decimal quantity)
     {

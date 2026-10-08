@@ -113,6 +113,54 @@ public class InventoryBalanceTests
     }
 
     [Fact]
+    public void Consume_WithNegativeInventoryAllowed_ShouldCreateNegativeBalance()
+    {
+        var inventory = InventoryBalance.CreateOpeningBalance(
+            Guid.NewGuid(),
+            5,
+            new InventoryCost(65));
+
+        var cost = inventory.Consume(
+            8,
+            allowNegative: true);
+
+        Assert.Equal(65, cost.Value);
+        Assert.Equal(-3, inventory.QuantityOnHand);
+        Assert.Equal(-195, inventory.InventoryValue);
+        Assert.Equal(65, inventory.AverageUnitCost.Value);
+    }
+
+    [Fact]
+    public void Consume_WithZeroInventoryAndFallbackCost_ShouldUseFallbackCost()
+    {
+        var inventory = InventoryBalance.CreateEmpty(
+            Guid.NewGuid());
+
+        var cost = inventory.Consume(
+            10,
+            allowNegative: true,
+            fallbackUnitCost: new InventoryCost(68));
+
+        Assert.Equal(68, cost.Value);
+        Assert.Equal(-10, inventory.QuantityOnHand);
+        Assert.Equal(-680, inventory.InventoryValue);
+        Assert.Equal(68, inventory.AverageUnitCost.Value);
+    }
+
+    [Fact]
+    public void Consume_WithZeroInventoryAndNoFallbackCost_ShouldReject()
+    {
+        var inventory = InventoryBalance.CreateEmpty(
+            Guid.NewGuid());
+
+        var action = () => inventory.Consume(
+            10,
+            allowNegative: true);
+
+        Assert.Throws<InventoryDomainException>(action);
+    }
+
+    [Fact]
     public void AdjustValue_ShouldRecalculateAverageCost()
     {
         var inventory = InventoryBalance.CreateOpeningBalance(

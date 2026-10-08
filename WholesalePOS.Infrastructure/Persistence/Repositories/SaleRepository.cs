@@ -22,6 +22,7 @@ public class SaleRepository
             .Include(x => x.Customer)
             .Include(x => x.Lines)
                 .ThenInclude(x => x.Product)
+            .Include(x => x.Payments)
             .SingleOrDefaultAsync(
                 x => x.Id == id,
                 cancellationToken);
