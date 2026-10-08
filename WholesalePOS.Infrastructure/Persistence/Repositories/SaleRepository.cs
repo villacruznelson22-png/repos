@@ -64,29 +64,30 @@ public class SaleRepository
         var totalCount = await sales.CountAsync(
             cancellationToken);
 
-        var items = await sales
+        var salesPage = await sales
+            .Include(x => x.Customer)
+            .Include(x => x.Lines)
             .OrderByDescending(x => x.OccurredAt)
             .ThenByDescending(x => x.CreatedAt)
             .Skip((query.PageNumber - 1) * query.PageSize)
             .Take(query.PageSize)
+            .ToListAsync(cancellationToken);
+
+        var items = salesPage
             .Select(x => new SaleListItemDto
             {
                 Id = x.Id,
                 CustomerId = x.CustomerId,
-                CustomerName = x.Customer == null
-                    ? null
-                    : x.Customer.Name,
+                CustomerName = x.Customer?.Name,
                 OccurredAt = x.OccurredAt,
                 ReferenceNumber = x.ReferenceNumber,
                 Status = x.Status,
                 TotalAmount = x.Lines
                     .Sum(line =>
-                        EF.Property<decimal>(
-                            line,
-                            nameof(SaleLine.UnitSellingPrice)) *
+                        line.UnitSellingPrice.Value *
                         line.Quantity)
             })
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         return new PagedResult<SaleListItemDto>
         {
