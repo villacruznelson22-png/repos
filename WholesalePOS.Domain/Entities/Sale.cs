@@ -34,6 +34,11 @@ public class Sale
     /// </summary>
     public string? CheckoutIdempotencyKey { get; private set; }
 
+    /// <summary>
+    /// SQL Server rowversion used to detect concurrent sale changes.
+    /// </summary>
+    public byte[] Version { get; private set; } = null!;
+
     public Customer? Customer { get; private set; }
 
     public ICollection<SaleLine> Lines { get; private set; }
