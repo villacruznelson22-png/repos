@@ -81,7 +81,9 @@ public class SaleRepository
                 Status = x.Status,
                 TotalAmount = x.Lines
                     .Sum(line =>
-                        line.UnitSellingPrice.Value *
+                        EF.Property<decimal>(
+                            line,
+                            nameof(SaleLine.UnitSellingPrice)) *
                         line.Quantity)
             })
             .ToListAsync(cancellationToken);
