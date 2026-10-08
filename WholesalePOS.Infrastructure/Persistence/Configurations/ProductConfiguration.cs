@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using WholesalePOS.Domain.Entities;
 using WholesalePOS.Domain.ValueObjects;
@@ -25,26 +25,33 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
 
         builder.Property(p => p.DefaultSellingPrice)
             .HasConversion(
-                    money => money.Value,
-                    value => new Money(value))
+                money => money.Value,
+                value => new Money(value))
             .HasPrecision(18, 2);
 
         builder.Property(p => p.SuggestedRetailPrice)
             .HasConversion(
-                    money => money.Value,
-                    value => new Money(value))
+                money => money.Value,
+                value => new Money(value))
             .HasPrecision(18, 2);
+
+        builder.Property(p => p.FallbackInventoryCost)
+            .HasConversion(
+                cost => cost == null ? (decimal?)null : cost.Value,
+                value => value == null
+                    ? null
+                    : new InventoryCost(value.Value))
+            .HasPrecision(19, 6);
 
         builder.Property(p => p.Stock)
             .HasConversion(
-            stock => stock.Value,
-            value => new StockQuantity(value))
+                stock => stock.Value,
+                value => new StockQuantity(value))
             .HasPrecision(18, 3);
 
-        //Rowversion for Concurrency
+        // Rowversion for Concurrency
         builder.Property(p => p.Version)
             .IsRowVersion();
-
 
         // BUSINESS RULE: A barcode may identify only one product, while products without
         // a barcode must remain allowed. The SQL Server filtered index enforces uniqueness
@@ -52,7 +59,5 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.HasIndex(p => p.Barcode)
             .IsUnique()
             .HasFilter("[Barcode] IS NOT NULL");
-
-
     }
 }
