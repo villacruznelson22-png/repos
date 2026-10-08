@@ -152,6 +152,53 @@ public class CheckoutSaleHandlerTests
     }
 
     [Fact]
+    public async Task Handle_ShouldIncludeExistingPaymentsInPaymentTotal()
+    {
+        var product = CreateProduct();
+        var sale = CreateConfirmedSale(product, quantity: 2, unitSellingPrice: 100);
+
+        sale.AddPayment(
+            new Payment(
+                sale.Id,
+                PaymentMethod.Cash,
+                new Money(100),
+                DateTime.UtcNow,
+                "payment-existing"));
+
+        SetupSale(sale);
+
+        var balance = InventoryBalance.CreateOpeningBalance(
+            product.Id,
+            10,
+            new InventoryCost(65));
+
+        _inventoryBalanceRepositoryMock
+            .Setup(x => x.GetByProductIdAsync(
+                product.Id,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(balance);
+
+        var handler = CreateHandler();
+
+        await handler.Handle(
+            new CheckoutSaleCommand(
+                sale.Id,
+                "checkout-004",
+                new[]
+                {
+                    new CheckoutPaymentRequest(
+                        PaymentMethod.Cash,
+                        100,
+                        "payment-004")
+                }),
+            CancellationToken.None);
+
+        Assert.Equal(SaleStatus.Completed, sale.Status);
+        Assert.Equal(2, sale.Payments.Count);
+        Assert.Equal(200, sale.Payments.Sum(x => x.Amount.Value));
+    }
+
+    [Fact]
     public async Task Handle_ShouldRejectPaymentTotalMismatch()
     {
         var product = CreateProduct();
