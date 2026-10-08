@@ -13,6 +13,9 @@ public class User
     public DateTime? LastLoginAt { get; private set; }
     public byte[] Version { get; private set; } = null!;
 
+    private readonly List<Role> _roles = [];
+    public IReadOnlyCollection<Role> Roles => _roles.AsReadOnly();
+
     private User() { }
 
     public User(string username, string displayName, string passwordHash)
@@ -52,4 +55,29 @@ public class User
     public void Activate() => IsActive = true;
     public void Deactivate() => IsActive = false;
     public void RecordLogin() => LastLoginAt = DateTime.UtcNow;
+
+    public void AssignRole(Role role)
+    {
+        ArgumentNullException.ThrowIfNull(role);
+
+        if (_roles.Any(x => x.Id == role.Id))
+            return;
+
+        _roles.Add(role);
+    }
+
+    public void RemoveRole(Guid roleId)
+        => _roles.RemoveAll(x => x.Id == roleId);
+
+    public bool HasRole(string roleName)
+    {
+        if (string.IsNullOrWhiteSpace(roleName))
+            return false;
+
+        return _roles.Any(x =>
+            string.Equals(x.Name, roleName.Trim(), StringComparison.OrdinalIgnoreCase));
+    }
+
+    public bool HasAnyRole(params string[] roleNames)
+        => roleNames.Any(HasRole);
 }
