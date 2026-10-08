@@ -27,7 +27,7 @@ public class GetSaleByIdHandlerTests
             referenceNumber: "SALE-001",
             notes: "Test sale");
 
-        var line = new SaleLine(
+        var saleLine = new SaleLine(
             sale.Id,
             product.Id,
             2,
@@ -35,9 +35,9 @@ public class GetSaleByIdHandlerTests
 
         typeof(SaleLine)
             .GetProperty(nameof(SaleLine.Product))!
-            .SetValue(line, product);
+            .SetValue(saleLine, product);
 
-        sale.AddLine(line);
+        sale.AddLine(saleLine);
 
         sale.Confirm();
 
@@ -67,12 +67,12 @@ public class GetSaleByIdHandlerTests
         Assert.Equal(SaleStatus.Confirmed, result.Status);
         Assert.Equal(140, result.TotalAmount);
 
-        var line = Assert.Single(result.Lines);
-        Assert.Equal(product.Id, line.ProductId);
-        Assert.Equal("Coca-Cola 1.5L", line.ProductName);
-        Assert.Equal(2, line.Quantity);
-        Assert.Equal(70, line.UnitSellingPrice);
-        Assert.Equal(140, line.LineTotal);
+        var resultLine = Assert.Single(result.Lines);
+        Assert.Equal(product.Id, resultLine.ProductId);
+        Assert.Equal("Coca-Cola 1.5L", resultLine.ProductName);
+        Assert.Equal(2, resultLine.Quantity);
+        Assert.Equal(70, resultLine.UnitSellingPrice);
+        Assert.Equal(140, resultLine.LineTotal);
 
         var payment = Assert.Single(result.Payments);
         Assert.Equal((int)PaymentMethod.Cash, payment.Method);
