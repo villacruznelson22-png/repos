@@ -49,8 +49,7 @@ public sealed class GetSaleByIdHandler
                     ProductName = line.Product.Name,
                     Quantity = line.Quantity,
                     UnitSellingPrice = line.UnitSellingPrice.Value,
-                    LineTotal = new Money(
-                        line.UnitSellingPrice.Value * line.Quantity).Value
+                    LineTotal = line.GetTotalAmount().Value
                 })
                 .ToList(),
 
