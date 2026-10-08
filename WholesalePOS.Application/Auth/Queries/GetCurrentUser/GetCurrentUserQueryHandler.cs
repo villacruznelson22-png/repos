@@ -10,16 +10,34 @@ public sealed class GetCurrentUserQueryHandler : IRequestHandler<GetCurrentUserQ
     private readonly ICurrentUser _currentUser;
     private readonly IUserRepository _users;
 
-    public GetCurrentUserQueryHandler(ICurrentUser currentUser, IUserRepository users)
+    public GetCurrentUserQueryHandler(
+        ICurrentUser currentUser,
+        IUserRepository users)
     {
-        _currentUser = currentUser; _users = users;
+        _currentUser = currentUser;
+        _users = users;
     }
 
-    public async Task<UserSummaryDto> Handle(GetCurrentUserQuery request, CancellationToken cancellationToken)
+    public async Task<UserSummaryDto> Handle(
+        GetCurrentUserQuery request,
+        CancellationToken cancellationToken)
     {
-        if (!_currentUser.UserId.HasValue) throw AuthenticationErrors.NotAuthenticated();
-        var user = await _users.GetByIdAsync(_currentUser.UserId.Value, cancellationToken);
-        if (user is null || !user.IsActive) throw AuthenticationErrors.NotAuthenticated();
-        return new UserSummaryDto { Id=user.Id, Username=user.Username, DisplayName=user.DisplayName };
+        if (!_currentUser.UserId.HasValue)
+            throw AuthenticationErrors.NotAuthenticated();
+
+        var user = await _users.GetByIdAsync(
+            _currentUser.UserId.Value,
+            cancellationToken);
+
+        if (user is null || !user.IsActive)
+            throw AuthenticationErrors.NotAuthenticated();
+
+        return new UserSummaryDto
+        {
+            Id = user.Id,
+            Username = user.Username,
+            DisplayName = user.DisplayName,
+            Roles = user.Roles.Select(x => x.Name).OrderBy(x => x).ToArray()
+        };
     }
 }
