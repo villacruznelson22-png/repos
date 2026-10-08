@@ -40,8 +40,6 @@ public sealed class CheckoutSaleHandler
 
         var checkoutKey = request.IdempotencyKey.Trim();
 
-        // A retry after a successful checkout is treated as an idempotent
-        // replay only when the same checkout key is supplied.
         if (sale.Status == SaleStatus.Completed)
         {
             if (string.Equals(
@@ -80,13 +78,32 @@ public sealed class CheckoutSaleHandler
                 duplicateKey);
         }
 
+        if (request.Payments.Any(payment =>
+                sale.Payments.Any(existing =>
+                    string.Equals(
+                        existing.IdempotencyKey,
+                        payment.IdempotencyKey.Trim(),
+                        StringComparison.Ordinal))))
+        {
+            var duplicateKey = request.Payments
+                .Select(x => x.IdempotencyKey.Trim())
+                .First(key => sale.Payments.Any(
+                    existing => string.Equals(
+                        existing.IdempotencyKey,
+                        key,
+                        StringComparison.Ordinal)));
+
+            throw CheckoutErrors.DuplicatePaymentIdempotencyKey(
+                duplicateKey);
+        }
+
         var saleTotal = sale.GetTotalAmount().Value;
 
         var existingPaymentTotal = sale.Payments.Sum(
             x => x.Amount.Value);
 
         var requestedPaymentTotal = request.Payments.Sum(
-            x => x.Amount);
+            x => new Money(x.Amount).Value);
 
         var paymentTotal =
             existingPaymentTotal + requestedPaymentTotal;
@@ -98,9 +115,6 @@ public sealed class CheckoutSaleHandler
                 paymentTotal);
         }
 
-        // Inventory is resolved and consumed before the sale is completed.
-        // Everything is tracked in the same DbContext and persisted by one
-        // SaveChanges call, so the operation remains atomic.
         foreach (var line in sale.Lines)
         {
             var balance =
@@ -130,19 +144,17 @@ public sealed class CheckoutSaleHandler
                     cancellationToken);
             }
 
-            InventoryCost? fallbackCost =
-                line.Product.FallbackInventoryCost;
-
-            if (!request.AllowNegativeInventory &&
-                line.Quantity > balance.QuantityOnHand)
+            if (line.Quantity > balance.QuantityOnHand &&
+                !request.AllowNegativeInventory)
             {
                 throw CheckoutErrors.InsufficientInventory(
                     line.ProductId);
             }
 
-            if (request.AllowNegativeInventory &&
-                line.Quantity > balance.QuantityOnHand &&
-                balance.AverageUnitCost.Value <= 0 &&
+            var fallbackCost =
+                line.Product.FallbackInventoryCost;
+
+            if (balance.AverageUnitCost.Value <= 0 &&
                 fallbackCost is null)
             {
                 throw CheckoutErrors.InventoryCostUnavailable(
