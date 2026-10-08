@@ -113,6 +113,54 @@ public class ProductRepositoryTests
         Assert.Equal("Product 04", result.Items[1].Name);
     }
 
+
+    [Fact]
+    [TestDatabase]
+    public async Task GetByBarcodeAsync_ShouldReturnMatchingProduct()
+    {
+        var factory = new TestDbContextFactory();
+
+        await using var context = factory.Create();
+
+        var product = new Product(
+            "Coca Cola 1.5L",
+            new Barcode("1234567890123"),
+            new Money(80),
+            new Money(75));
+
+        context.Products.Add(product);
+
+        await context.SaveChangesAsync();
+
+        var repository = new ProductRepository(context);
+
+        var result = await repository.GetByBarcodeAsync(
+            "1234567890123",
+            CancellationToken.None);
+
+        Assert.NotNull(result);
+        Assert.Equal(product.Id, result.Id);
+        Assert.Equal("Coca Cola 1.5L", result.Name);
+        Assert.Equal("1234567890123", result.Barcode!.Value);
+    }
+
+    [Fact]
+    [TestDatabase]
+    public async Task GetByBarcodeAsync_ShouldReturnNull_WhenBarcodeDoesNotExist()
+    {
+        var factory = new TestDbContextFactory();
+
+        await using var context = factory.Create();
+
+        var repository = new ProductRepository(context);
+
+        var result = await repository.GetByBarcodeAsync(
+            "9999999999999",
+            CancellationToken.None);
+
+        Assert.Null(result);
+    }
+
     private static Product CreateProduct(
         string name,
         decimal sellingPrice)
