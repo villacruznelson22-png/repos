@@ -14,9 +14,6 @@ public sealed class CheckoutSaleCommandValidator
             .NotEmpty()
             .MaximumLength(100);
 
-        RuleFor(x => x.Payments)
-            .NotEmpty();
-
         RuleForEach(x => x.Payments)
             .ChildRules(payment =>
             {
