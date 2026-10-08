@@ -61,9 +61,7 @@ public class ProductRepository : Repository<Product>, IProductRepository
             var search = query.Search.Trim();
 
             products = products.Where(p =>
-                p.Name.Contains(search) ||
-                (p.Barcode != null &&
-                 p.Barcode.Value.Contains(search)));
+                p.Name.Contains(search));
         }
 
         var totalCount = await products.CountAsync(
