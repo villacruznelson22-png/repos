@@ -1,11 +1,13 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using WholesalePOS.Application.Common.Models;
 using WholesalePOS.Application.Customers.Commands.AddCustomerAddress;
 using WholesalePOS.Application.Customers.Commands.CreateCustomer;
 using WholesalePOS.Application.Customers.Commands.RemoveCustomerAddress;
 using WholesalePOS.Application.Customers.Commands.UpdateCustomerAddress;
 using WholesalePOS.Application.Customers.DTOs;
 using WholesalePOS.Application.Customers.Queries.GetCustomerById;
+using WholesalePOS.Application.Customers.Queries.GetCustomers;
 
 namespace WholesalePOS.Api.Controllers;
 
@@ -50,11 +52,23 @@ public class CustomersController : ControllerBase
         return Ok(customer);
     }
 
+    [HttpGet]
+    public async Task<ActionResult<PagedResult<CustomerListItemDto>>> Get(
+        [FromQuery] GetCustomersQuery query,
+        CancellationToken cancellationToken)
+    {
+        var customers = await _sender.Send(
+            query,
+            cancellationToken);
+
+        return Ok(customers);
+    }
+
     [HttpPost("{id:guid}/addresses")]
     public async Task<IActionResult> AddAddress(
-    Guid id,
-    [FromBody] CustomerAddressDto address,
-    CancellationToken cancellationToken)
+        Guid id,
+        [FromBody] CustomerAddressDto address,
+        CancellationToken cancellationToken)
     {
         var addressId = await _sender.Send(
             new AddCustomerAddressCommand(
@@ -67,10 +81,10 @@ public class CustomersController : ControllerBase
 
     [HttpPut("{id:guid}/addresses/{addressId:guid}")]
     public async Task<IActionResult> UpdateAddress(
-    Guid id,
-    Guid addressId,
-    [FromBody] CustomerAddressDto address,
-    CancellationToken cancellationToken)
+        Guid id,
+        Guid addressId,
+        [FromBody] CustomerAddressDto address,
+        CancellationToken cancellationToken)
     {
         await _sender.Send(
             new UpdateCustomerAddressCommand(
@@ -82,12 +96,11 @@ public class CustomersController : ControllerBase
         return NoContent();
     }
 
-
     [HttpDelete("{id:guid}/addresses/{addressId:guid}")]
     public async Task<IActionResult> RemoveAddress(
-    Guid id,
-    Guid addressId,
-    CancellationToken cancellationToken)
+        Guid id,
+        Guid addressId,
+        CancellationToken cancellationToken)
     {
         await _sender.Send(
             new RemoveCustomerAddressCommand(
