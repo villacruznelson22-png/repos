@@ -13,7 +13,7 @@ public class UserRepositoryRoleTests
         await using var context = factory.Create();
 
         var user = new User("nelson", "Nelson", "hash");
-        var role = new Role("Admin");
+        var role = new Role("TestAdmin");
 
         user.AssignRole(role);
 
@@ -29,7 +29,7 @@ public class UserRepositoryRoleTests
 
         Assert.NotNull(result);
         Assert.Single(result.Roles);
-        Assert.Equal("Admin", result.Roles.Single().Name);
+        Assert.Equal("TestAdmin", result.Roles.Single().Name);
     }
 
     [Fact]
@@ -39,14 +39,14 @@ public class UserRepositoryRoleTests
         var factory = new TestDbContextFactory();
         await using var context = factory.Create();
 
-        var role = new Role("Admin");
+        var role = new Role("TestAdmin");
         context.Roles.Add(role);
         await context.SaveChangesAsync();
 
         var repository = new UserRepository(context);
 
         var result = await repository.GetRoleByNameAsync(
-            "Admin",
+            "TestAdmin",
             CancellationToken.None);
 
         Assert.NotNull(result);
