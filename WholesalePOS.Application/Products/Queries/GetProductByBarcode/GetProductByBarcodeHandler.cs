@@ -25,8 +25,7 @@ public sealed class GetProductByBarcodeHandler
             cancellationToken);
 
         if (product is null)
-            throw ProductErrors.NotFound(
-                Guid.Empty);
+            throw ProductErrors.NotFoundByBarcode(request.Barcode);
 
         return new ProductDto
         {
