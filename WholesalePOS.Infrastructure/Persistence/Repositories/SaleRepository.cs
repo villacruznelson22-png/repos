@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 using WholesalePOS.Application.Common.Models;
 using WholesalePOS.Application.Interfaces;
 using WholesalePOS.Application.Sales.Queries.GetSales;
@@ -43,6 +44,46 @@ public class SaleRepository
             .SingleOrDefaultAsync(
                 refund => refund.IdempotencyKey == normalizedKey,
                 cancellationToken);
+    }
+
+    public async Task<SaleRefund> CreateRefundAtomicallyAsync(
+        SaleRefund refund,
+        CancellationToken cancellationToken)
+    {
+        // Serializable isolation keeps the payment/refund balance check and insert
+        // in one transaction, preventing two different concurrent refunds from
+        // both spending the same remaining refundable balance.
+        await using var transaction = await _context.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable,
+            cancellationToken);
+
+        var existingRefund = await _context.SaleRefunds
+            .SingleOrDefaultAsync(
+                x => x.IdempotencyKey == refund.IdempotencyKey,
+                cancellationToken);
+
+        if (existingRefund is not null)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return existingRefund;
+        }
+
+        var sale = await _context.Sales
+            .Include(x => x.Payments)
+            .Include(x => x.Refunds)
+            .SingleOrDefaultAsync(
+                x => x.Id == refund.SaleId,
+                cancellationToken);
+
+        if (sale is null)
+            throw new InvalidOperationException(
+                $"Sale '{refund.SaleId}' was not found while recording a refund.");
+
+        sale.AddRefund(refund);
+        await _context.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        return refund;
     }
 
     public async Task<PagedResult<SaleListItemDto>> GetPagedAsync(
