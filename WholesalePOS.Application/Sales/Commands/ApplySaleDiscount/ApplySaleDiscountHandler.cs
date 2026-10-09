@@ -1,5 +1,6 @@
 using MediatR;
 using WholesalePOS.Application.Common.Errors;
+using WholesalePOS.Application.Common.Exceptions;
 using WholesalePOS.Application.Interfaces;
 using WholesalePOS.Domain.Entities;
 using WholesalePOS.Domain.Enums;
@@ -37,7 +38,7 @@ public sealed class ApplySaleDiscountHandler
 
         if (!_currentUser.IsAuthenticated || _currentUser.UserId is not Guid userId ||
             userId == Guid.Empty)
-            throw new UnauthorizedAccessException(
+            throw new UnauthorizedException(
                 "An authenticated employee is required to apply a discount.");
 
         decimal eligibleAmount;
