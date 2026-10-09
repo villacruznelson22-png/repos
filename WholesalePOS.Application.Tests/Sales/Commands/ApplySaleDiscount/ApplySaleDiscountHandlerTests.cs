@@ -1,5 +1,6 @@
 using Moq;
 using WholesalePOS.Application.Interfaces;
+using WholesalePOS.Application.Common.Exceptions;
 using WholesalePOS.Application.Sales.Commands.ApplySaleDiscount;
 using WholesalePOS.Domain.Entities;
 using WholesalePOS.Domain.Enums;
@@ -48,7 +49,7 @@ public class ApplySaleDiscountHandlerTests
         var unitOfWork = new Mock<IUnitOfWork>();
         var handler = new ApplySaleDiscountHandler(sales.Object, currentUser.Object, unitOfWork.Object);
 
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => handler.Handle(
+        await Assert.ThrowsAsync<UnauthorizedException>(() => handler.Handle(
             new ApplySaleDiscountCommand(sale.Id, null, DiscountScope.Sale,
                 DiscountCalculationType.FixedAmount, 10m, "Promotion"), CancellationToken.None));
 
