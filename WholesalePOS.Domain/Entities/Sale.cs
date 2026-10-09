@@ -56,6 +56,9 @@ public class Sale
     public ICollection<SaleDiscount> Discounts { get; private set; }
         = new List<SaleDiscount>();
 
+    public ICollection<SaleRefund> Refunds { get; private set; }
+        = new List<SaleRefund>();
+
     private Sale()
     {
         // Used by EF Core
