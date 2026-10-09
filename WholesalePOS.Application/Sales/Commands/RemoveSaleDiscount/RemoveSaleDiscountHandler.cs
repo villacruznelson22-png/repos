@@ -1,5 +1,6 @@
 using MediatR;
 using WholesalePOS.Application.Common.Errors;
+using WholesalePOS.Application.Common.Exceptions;
 using WholesalePOS.Application.Interfaces;
 
 namespace WholesalePOS.Application.Sales.Commands.RemoveSaleDiscount;
@@ -34,7 +35,7 @@ public sealed class RemoveSaleDiscountHandler
         if (!_currentUser.IsAuthenticated ||
             _currentUser.UserId is not Guid userId ||
             userId == Guid.Empty)
-            throw new UnauthorizedAccessException(
+            throw new UnauthorizedException(
                 "An authenticated employee is required to remove a discount.");
 
         sale.RemoveDiscount(request.DiscountId, userId, request.Reason);
