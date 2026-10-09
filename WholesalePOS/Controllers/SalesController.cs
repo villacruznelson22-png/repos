@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using WholesalePOS.Application.Common.Models;
+using WholesalePOS.Application.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WholesalePOS.Api.Contracts.Sales;
 using WholesalePOS.Application.Sales.Commands.ApplySaleDiscount;
@@ -124,7 +125,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpPost("{saleId:guid}/discounts")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Policy = AuthorizationPolicies.ManagerOrAdmin)]
     public async Task<IActionResult> ApplyDiscount(
         Guid saleId,
         [FromBody] ApplySaleDiscountRequest request,
