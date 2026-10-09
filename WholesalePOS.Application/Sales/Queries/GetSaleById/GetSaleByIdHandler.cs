@@ -77,7 +77,11 @@ public sealed class GetSaleByIdHandler
                     Amount = discount.Amount.Value,
                     Reason = discount.Reason,
                     AppliedByUserId = discount.AppliedByUserId,
-                    AppliedAt = discount.AppliedAt
+                    AppliedAt = discount.AppliedAt,
+                    IsRemoved = discount.IsRemoved,
+                    RemovedAt = discount.RemovedAt,
+                    RemovedByUserId = discount.RemovedByUserId,
+                    RemovalReason = discount.RemovalReason
                 })
                 .ToList()
         };
