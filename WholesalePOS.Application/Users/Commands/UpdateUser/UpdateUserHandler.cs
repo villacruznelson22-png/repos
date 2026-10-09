@@ -32,9 +32,16 @@ public sealed class UpdateUserHandler : IRequestHandler<UpdateUserCommand>
             roles.Add(role);
         }
 
-        if (_currentUser.UserId == user.Id && user.HasRole(RoleNames.Admin) &&
-            !roleNames.Contains(RoleNames.Admin, StringComparer.OrdinalIgnoreCase))
+        var retainsAdminRole = roleNames.Contains(RoleNames.Admin, StringComparer.OrdinalIgnoreCase);
+        if (_currentUser.UserId == user.Id && user.HasRole(RoleNames.Admin) && !retainsAdminRole)
             throw UserErrors.CannotRemoveOwnAdminRole();
+
+        if (user.IsActive && user.HasRole(RoleNames.Admin) && !retainsAdminRole)
+        {
+            var activeAdminCount = await _users.CountActiveAdminsAsync(cancellationToken);
+            if (activeAdminCount <= 1)
+                throw UserErrors.CannotRemoveLastActiveAdmin();
+        }
 
         user.ChangeUsername(username);
         user.ChangeDisplayName(request.DisplayName);
