@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using WholesalePOS.Application.Interfaces;
@@ -34,13 +34,11 @@ public static class DependencyInjection
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IPasswordService, PasswordService>();
         services.AddScoped<ITokenService, JwtTokenService>();
-
+        services.AddScoped<IInitialAdminBootstrapper, InitialAdminBootstrapper>();
 
         services.AddScoped<InventoryService>();
         services.AddScoped<PsgcImportService>();
-
         services.AddScoped<IUnitOfWork, UnitOfWork>();
-
 
         return services;
     }
