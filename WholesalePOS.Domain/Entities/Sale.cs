@@ -310,6 +310,33 @@ public class Sale
         Payments.Add(payment);
     }
 
+    public void AddRefund(SaleRefund refund)
+    {
+        ArgumentNullException.ThrowIfNull(refund);
+
+        if (Status != SaleStatus.Completed && Status != SaleStatus.Voided)
+            throw new SaleDomainException("Only a completed or voided sale can be refunded.");
+
+        if (refund.SaleId != Id)
+            throw new SaleDomainException("Refund does not belong to this sale.");
+
+        if (Refunds.Any(x => string.Equals(
+                x.IdempotencyKey, refund.IdempotencyKey, StringComparison.Ordinal)))
+            throw new SaleDomainException("This refund idempotency key has already been used for this sale.");
+
+        var amountAlreadyRefunded = Refunds.Sum(x => x.Amount.Value);
+        var amountPaid = Payments.Sum(x => x.Amount.Value);
+        var remainingRefundable = amountPaid - amountAlreadyRefunded;
+
+        if (refund.Amount.Value > remainingRefundable)
+            throw new SaleDomainException("Refund amount cannot exceed the remaining amount paid.");
+
+        Refunds.Add(refund);
+    }
+
+    public decimal GetRefundedAmount()
+        => Refunds.Sum(refund => refund.Amount.Value);
+
     public void SetCheckoutIdempotencyKey(string idempotencyKey)
     {
         if (string.IsNullOrWhiteSpace(idempotencyKey))
