@@ -32,7 +32,7 @@ public class RefundSaleHandlerTests
         Assert.Equal(30m, refund.Amount.Value);
         Assert.Equal(userId, refund.RefundedByUserId);
         Assert.Equal("Customer return", refund.Reason);
-        Assert.Equal(70m, sale.GetRefundedAmount() is var total ? 100m - total : 0m);
+        Assert.Equal(30m, sale.GetRefundedAmount());
         unitOfWork.Verify(
             x => x.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Once);
