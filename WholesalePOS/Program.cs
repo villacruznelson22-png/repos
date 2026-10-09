@@ -70,6 +70,21 @@ builder.Services
 
 var app = builder.Build();
 
+// Bootstrap the first administrator through an Application abstraction.
+// The API does not access EF Core or Infrastructure implementation details.
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var bootstrapper = scope.ServiceProvider
+        .GetRequiredService<IInitialAdminBootstrapper>();
+
+    await bootstrapper.EnsureInitialAdminAsync(
+        app.Configuration["BootstrapAdmin:Username"],
+        app.Configuration["BootstrapAdmin:DisplayName"],
+        app.Configuration["BootstrapAdmin:Password"],
+        CancellationToken.None);
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
