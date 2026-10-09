@@ -12,16 +12,13 @@ public sealed class RefundSaleHandler : IRequestHandler<RefundSaleCommand, Guid>
 {
     private readonly ISaleRepository _saleRepository;
     private readonly ICurrentUser _currentUser;
-    private readonly IUnitOfWork _unitOfWork;
 
     public RefundSaleHandler(
         ISaleRepository saleRepository,
-        ICurrentUser currentUser,
-        IUnitOfWork unitOfWork)
+        ICurrentUser currentUser)
     {
         _saleRepository = saleRepository;
         _currentUser = currentUser;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Guid> Handle(
@@ -42,37 +39,10 @@ public sealed class RefundSaleHandler : IRequestHandler<RefundSaleCommand, Guid>
         if (string.IsNullOrWhiteSpace(request.IdempotencyKey))
             throw new SaleDomainException("Refund idempotency key cannot be empty.");
 
-        // A retry with the same key and payload returns the original result.
-        // Reusing a key for a different operation is rejected.
-        var existingRefund = await _saleRepository.GetRefundByIdempotencyKeyAsync(
-            request.IdempotencyKey,
-            cancellationToken);
-
-        if (existingRefund is not null)
-        {
-            var sameRequest =
-                existingRefund.SaleId == request.SaleId &&
-                existingRefund.Amount.Value == new Money(request.Amount).Value &&
-                existingRefund.Method == request.Method &&
-                string.Equals(existingRefund.Reason, request.Reason?.Trim(), StringComparison.Ordinal) &&
-                string.Equals(existingRefund.ReferenceNumber, Normalize(request.ReferenceNumber), StringComparison.Ordinal);
-
-            if (!sameRequest)
-                throw new SaleDomainException(
-                    "This refund idempotency key has already been used for a different request.");
-
-            return existingRefund.Id;
-        }
-
-        var sale = await _saleRepository.GetByIdWithLinesAsync(
+        // Build the proposed record; the repository serializes the idempotency
+        // check, balance validation, and insert in one database transaction.
+        var proposedRefund = new SaleRefund(
             request.SaleId,
-            cancellationToken);
-
-        if (sale is null)
-            throw SaleErrors.NotFound(request.SaleId);
-
-        var refund = new SaleRefund(
-            sale.Id,
             new Money(request.Amount),
             request.Method,
             DateTime.UtcNow,
@@ -81,11 +51,25 @@ public sealed class RefundSaleHandler : IRequestHandler<RefundSaleCommand, Guid>
             request.IdempotencyKey,
             request.ReferenceNumber);
 
-        sale.AddRefund(refund);
+        var persistedRefund = await _saleRepository.CreateRefundAtomicallyAsync(
+            proposedRefund,
+            cancellationToken);
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        if (persistedRefund.Id != proposedRefund.Id)
+        {
+            var sameRequest =
+                persistedRefund.SaleId == request.SaleId &&
+                persistedRefund.Amount.Value == proposedRefund.Amount.Value &&
+                persistedRefund.Method == request.Method &&
+                string.Equals(persistedRefund.Reason, request.Reason.Trim(), StringComparison.Ordinal) &&
+                string.Equals(persistedRefund.ReferenceNumber, Normalize(request.ReferenceNumber), StringComparison.Ordinal);
 
-        return refund.Id;
+            if (!sameRequest)
+                throw new SaleDomainException(
+                    "This refund idempotency key has already been used for a different request.");
+        }
+
+        return persistedRefund.Id;
     }
 
     private static string? Normalize(string? value)
