@@ -38,6 +38,13 @@ public sealed class CheckoutSaleHandler
         if (sale is null)
             throw SaleErrors.NotFound(request.SaleId);
 
+        if (sale.Status != SaleStatus.Confirmed &&
+            sale.Status != SaleStatus.Completed)
+        {
+            throw new InvalidOperationException(
+                "Only a confirmed sale can be checked out.");
+        }
+
         var checkoutKey = request.IdempotencyKey.Trim();
 
         if (sale.Status == SaleStatus.Completed)
