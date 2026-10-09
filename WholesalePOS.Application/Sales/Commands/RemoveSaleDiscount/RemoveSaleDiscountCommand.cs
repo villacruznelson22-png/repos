@@ -4,4 +4,5 @@ namespace WholesalePOS.Application.Sales.Commands.RemoveSaleDiscount;
 
 public sealed record RemoveSaleDiscountCommand(
     Guid SaleId,
-    Guid DiscountId) : IRequest;
+    Guid DiscountId,
+    string Reason) : IRequest;
