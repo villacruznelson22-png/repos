@@ -86,6 +86,11 @@ public class SaleDiscountTests
         Assert.True(discount.IsRemoved);
         Assert.Equal(userId, discount.RemovedByUserId);
         Assert.Equal("Entered in error", discount.RemovalReason);
+
+        // Reversed discounts remain for audit but no longer block editing the sale.
+        sale.ChangeLineQuantity(line.Id, 2);
+        Assert.Equal(200m, sale.GetSubtotalAmount().Value);
+        Assert.Equal(200m, sale.GetTotalAmount().Value);
     }
 
     private static (Sale Sale, SaleLine Line, Guid UserId) CreateSale(
