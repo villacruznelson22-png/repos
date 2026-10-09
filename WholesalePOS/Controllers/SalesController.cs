@@ -11,6 +11,7 @@ using WholesalePOS.Application.Sales.Commands.CheckoutSale;
 using WholesalePOS.Application.Sales.Commands.ConfirmSale;
 using WholesalePOS.Application.Sales.Commands.CreateSale;
 using WholesalePOS.Application.Sales.Commands.UpdateSale;
+using WholesalePOS.Application.Sales.Commands.VoidSale;
 using WholesalePOS.Application.Sales.Queries.GetSaleById;
 using WholesalePOS.Application.Sales.Queries.GetSales;
 
@@ -96,6 +97,20 @@ public class SalesController : ControllerBase
     {
         await _sender.Send(
             new CancelSaleCommand(saleId),
+            cancellationToken);
+
+        return NoContent();
+    }
+
+    [HttpPost("{saleId:guid}/void")]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<IActionResult> Void(
+        Guid saleId,
+        [FromBody] VoidSaleRequest request,
+        CancellationToken cancellationToken)
+    {
+        await _sender.Send(
+            new VoidSaleCommand(saleId, request.Reason),
             cancellationToken);
 
         return NoContent();
