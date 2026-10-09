@@ -45,6 +45,13 @@ public sealed class CheckoutSaleHandler
                 "Only a confirmed sale can be checked out.");
         }
 
+        if (sale.Status != SaleStatus.Confirmed &&
+            sale.Status != SaleStatus.Completed)
+        {
+            throw new InvalidOperationException(
+                "Only a confirmed sale can be checked out.");
+        }
+
         var checkoutKey = request.IdempotencyKey.Trim();
 
         if (sale.Status == SaleStatus.Completed)
