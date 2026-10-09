@@ -3,6 +3,7 @@ using WholesalePOS.Application.Common.Models;
 using WholesalePOS.Application.Interfaces;
 using WholesalePOS.Application.Users.DTOs;
 using WholesalePOS.Application.Users.Queries.GetUsers;
+using WholesalePOS.Domain.Common;
 using WholesalePOS.Domain.Entities;
 
 namespace WholesalePOS.Infrastructure.Persistence.Repositories;
@@ -62,6 +63,11 @@ public sealed class UserRepository : IUserRepository
         => _context.RefreshTokens
             .Where(x => x.UserId == userId && x.RevokedAt == null)
             .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.RevokedAt, utcNow), cancellationToken);
+
+    public Task<int> CountActiveAdminsAsync(CancellationToken cancellationToken)
+        => _context.Users.CountAsync(
+            user => user.IsActive && user.Roles.Any(role => role.Name == RoleNames.Admin),
+            cancellationToken);
 
     public Task<Role?> GetRoleByNameAsync(string name, CancellationToken cancellationToken)
         => _context.Roles.SingleOrDefaultAsync(x => x.Name == name, cancellationToken);
