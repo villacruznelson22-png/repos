@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.Data;
 using WholesalePOS.Application.Common.Models;
+using WholesalePOS.Application.Common.Errors;
 using WholesalePOS.Application.Interfaces;
 using WholesalePOS.Application.Sales.Queries.GetSales;
 using WholesalePOS.Domain.Entities;
@@ -76,8 +77,7 @@ public class SaleRepository
                 cancellationToken);
 
         if (sale is null)
-            throw new InvalidOperationException(
-                $"Sale '{refund.SaleId}' was not found while recording a refund.");
+            throw SaleErrors.NotFound(refund.SaleId);
 
         sale.AddRefund(refund);
         await _context.SaveChangesAsync(cancellationToken);
