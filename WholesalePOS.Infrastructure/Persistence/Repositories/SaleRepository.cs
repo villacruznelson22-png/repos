@@ -26,6 +26,7 @@ public class SaleRepository
             .Include(x => x.Lines)
                 .ThenInclude(x => x.Product)
             .Include(x => x.Payments)
+            .Include(x => x.Discounts)
             .SingleOrDefaultAsync(
                 x => x.Id == id,
                 cancellationToken);
@@ -67,6 +68,7 @@ public class SaleRepository
         var salesPage = await sales
             .Include(x => x.Customer)
             .Include(x => x.Lines)
+            .Include(x => x.Discounts)
             .OrderByDescending(x => x.OccurredAt)
             .ThenByDescending(x => x.CreatedAt)
             .Skip((query.PageNumber - 1) * query.PageSize)
@@ -82,10 +84,10 @@ public class SaleRepository
                 OccurredAt = x.OccurredAt,
                 ReferenceNumber = x.ReferenceNumber,
                 Status = x.Status,
-                TotalAmount = x.Lines
-                    .Sum(line =>
-                        line.UnitSellingPrice.Value *
-                        line.Quantity)
+                TotalAmount = Math.Max(0m,
+                    x.Lines.Sum(line =>
+                        line.UnitSellingPrice.Value * line.Quantity) -
+                    x.Discounts.Sum(discount => discount.Amount.Value))
             })
             .ToList();
 
