@@ -3,6 +3,7 @@ using WholesalePOS.Application.Common.Errors;
 using WholesalePOS.Application.Interfaces;
 using WholesalePOS.Domain.Entities;
 using WholesalePOS.Domain.Enums;
+using WholesalePOS.Domain.Exceptions;
 using WholesalePOS.Domain.ValueObjects;
 
 namespace WholesalePOS.Application.Sales.Commands.ApplySaleDiscount;
@@ -43,12 +44,12 @@ public sealed class ApplySaleDiscountHandler
         if (request.Scope == DiscountScope.SaleLine)
         {
             if (request.SaleLineId is not Guid lineId)
-                throw new ArgumentException(
+                throw new SaleDomainException(
                     "A sale line is required for a line-item discount.");
 
             var line = sale.Lines.SingleOrDefault(x => x.Id == lineId);
             if (line is null)
-                throw new ArgumentException(
+                throw new SaleDomainException(
                     "The selected sale line was not found.");
 
             eligibleAmount = line.GetTotalAmount().Value -
@@ -64,11 +65,11 @@ public sealed class ApplySaleDiscountHandler
         }
         else
         {
-            throw new ArgumentException("Discount scope is invalid.");
+            throw new SaleDomainException("Discount scope is invalid.");
         }
 
         if (eligibleAmount <= 0)
-            throw new ArgumentException(
+            throw new SaleDomainException(
                 "There is no remaining amount available for a discount.");
 
         var calculatedAmount = request.CalculationType switch
@@ -78,16 +79,16 @@ public sealed class ApplySaleDiscountHandler
                     MidpointRounding.AwayFromZero),
             DiscountCalculationType.FixedAmount =>
                 decimal.Round(request.Value, 2, MidpointRounding.AwayFromZero),
-            _ => throw new ArgumentException(
+            _ => throw new SaleDomainException(
                 "Discount calculation type is invalid.")
         };
 
         if (calculatedAmount <= 0)
-            throw new ArgumentException(
+            throw new SaleDomainException(
                 "Calculated discount must be greater than zero.");
 
         if (calculatedAmount > eligibleAmount)
-            throw new ArgumentException(
+            throw new SaleDomainException(
                 "Discount cannot exceed the remaining eligible amount.");
 
         var discount = new SaleDiscount(
