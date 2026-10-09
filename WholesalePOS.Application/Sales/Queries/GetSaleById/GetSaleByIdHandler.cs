@@ -39,6 +39,8 @@ public sealed class GetSaleByIdHandler
             CompletedAt = sale.CompletedAt,
             CancelledAt = sale.CancelledAt,
             VoidedAt = sale.VoidedAt,
+            VoidedByUserId = sale.VoidedByUserId,
+            VoidReason = sale.VoidReason,
             SubtotalAmount = sale.GetSubtotalAmount().Value,
             DiscountTotalAmount = sale.GetDiscountTotalAmount().Value,
             TotalAmount = sale.GetTotalAmount().Value,
