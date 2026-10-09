@@ -150,9 +150,9 @@ public class Sale
 
     private void EnsureNoDiscountsBeforeChangingLines()
     {
-        if (Discounts.Count > 0)
+        if (Discounts.Any(discount => !discount.IsRemoved))
             throw new SaleDomainException(
-                "Remove the sale discounts before changing sale lines.");
+                "Remove the active sale discounts before changing sale lines.");
     }
 
     public void ChangeOccurredAt(DateTime occurredAt)
