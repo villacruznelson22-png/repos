@@ -8,6 +8,9 @@ public static class CheckoutErrors
     public static ConflictException AlreadyProcessed(Guid saleId)
         => new($"Sale '{saleId}' has already been completed.");
 
+    public static ConflictException SaleNotConfirmed(Guid saleId)
+        => new($"Sale '{saleId}' must be confirmed before checkout.");
+
     public static ConflictException IdempotencyKeyConflict()
         => new("The checkout idempotency key is already associated with another checkout.");
 
