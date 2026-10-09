@@ -171,7 +171,7 @@ public class CancelSaleHandlerTests
         var sale = CreateDraftSaleWithLine();
         sale.Confirm();
         sale.Complete();
-        sale.Void();
+        sale.Void(Guid.NewGuid(), "Test void");
 
         _saleRepositoryMock
             .Setup(x => x.GetByIdWithLinesAsync(
