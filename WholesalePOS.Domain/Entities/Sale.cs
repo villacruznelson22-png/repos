@@ -47,6 +47,9 @@ public class Sale
     public ICollection<Payment> Payments { get; private set; }
         = new List<Payment>();
 
+    public ICollection<SaleDiscount> Discounts { get; private set; }
+        = new List<SaleDiscount>();
+
     private Sale()
     {
         // Used by EF Core
@@ -70,12 +73,82 @@ public class Sale
         ChangeNotes(notes);
     }
 
-    public Money GetTotalAmount()
+    public Money GetSubtotalAmount()
     {
-        var total = Lines.Sum(
+        var subtotal = Lines.Sum(
             line => line.UnitSellingPrice.Value * line.Quantity);
 
-        return new Money(total);
+        return new Money(subtotal);
+    }
+
+    public Money GetDiscountTotalAmount()
+        => new(Discounts.Sum(discount => discount.Amount.Value));
+
+    public Money GetTotalAmount()
+        => new(Math.Max(0m, GetSubtotalAmount().Value - GetDiscountTotalAmount().Value));
+
+    public void AddDiscount(SaleDiscount discount)
+    {
+        ArgumentNullException.ThrowIfNull(discount);
+        EnsureEditable();
+
+        if (discount.SaleId != Id)
+            throw new SaleDomainException("Discount does not belong to this sale.");
+
+        if (discount.Scope == DiscountScope.SaleLine)
+        {
+            if (discount.SaleLineId is not Guid lineId ||
+                Lines.All(line => line.Id != lineId))
+                throw new SaleDomainException("Discount sale line was not found on this sale.");
+
+            if (Discounts.Any(x => x.Scope == DiscountScope.Sale))
+                throw new SaleDomainException(
+                    "Line-item discounts must be applied before sale-wide discounts.");
+
+            var line = Lines.Single(x => x.Id == lineId);
+            var alreadyDiscounted = Discounts
+                .Where(x => x.Scope == DiscountScope.SaleLine && x.SaleLineId == lineId)
+                .Sum(x => x.Amount.Value);
+            var available = line.GetTotalAmount().Value - alreadyDiscounted;
+
+            if (discount.Amount.Value > available)
+                throw new SaleDomainException(
+                    "Discount amount cannot exceed the remaining line-item amount.");
+        }
+        else
+        {
+            var lineDiscounts = Discounts
+                .Where(x => x.Scope == DiscountScope.SaleLine)
+                .Sum(x => x.Amount.Value);
+            var saleDiscounts = Discounts
+                .Where(x => x.Scope == DiscountScope.Sale)
+                .Sum(x => x.Amount.Value);
+            var available = GetSubtotalAmount().Value - lineDiscounts - saleDiscounts;
+
+            if (discount.Amount.Value > available)
+                throw new SaleDomainException(
+                    "Discount amount cannot exceed the remaining sale amount.");
+        }
+
+        Discounts.Add(discount);
+    }
+
+    public void RemoveDiscount(Guid discountId)
+    {
+        EnsureEditable();
+
+        var discount = Discounts.SingleOrDefault(x => x.Id == discountId);
+        if (discount is null)
+            throw new SaleDomainException("Discount was not found.");
+
+        Discounts.Remove(discount);
+    }
+
+    private void EnsureNoDiscountsBeforeChangingLines()
+    {
+        if (Discounts.Count > 0)
+            throw new SaleDomainException(
+                "Remove the sale discounts before changing sale lines.");
     }
 
     public void ChangeOccurredAt(DateTime occurredAt)
@@ -121,6 +194,7 @@ public class Sale
         }
 
         EnsureEditable();
+        EnsureNoDiscountsBeforeChangingLines();
 
         if (line.SaleId != Id)
         {
@@ -140,6 +214,7 @@ public class Sale
     public void RemoveLine(Guid lineId)
     {
         EnsureEditable();
+        EnsureNoDiscountsBeforeChangingLines();
 
         var line = Lines.SingleOrDefault(
             x => x.Id == lineId);
@@ -158,6 +233,7 @@ public class Sale
         decimal quantity)
     {
         EnsureEditable();
+        EnsureNoDiscountsBeforeChangingLines();
 
         var line = Lines.SingleOrDefault(
             x => x.Id == lineId);
@@ -176,6 +252,7 @@ public class Sale
         Money unitSellingPrice)
     {
         EnsureEditable();
+        EnsureNoDiscountsBeforeChangingLines();
 
         var line = Lines.SingleOrDefault(
             x => x.Id == lineId);
