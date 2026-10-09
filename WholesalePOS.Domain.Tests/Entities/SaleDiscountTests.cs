@@ -79,10 +79,13 @@ public class SaleDiscountTests
             new Money(25m), "Manual discount", userId);
         sale.AddDiscount(discount);
 
-        sale.RemoveDiscount(discount.Id);
+        sale.RemoveDiscount(discount.Id, userId, "Entered in error");
 
         Assert.Equal(100m, sale.GetTotalAmount().Value);
-        Assert.Empty(sale.Discounts);
+        Assert.Single(sale.Discounts);
+        Assert.True(discount.IsRemoved);
+        Assert.Equal(userId, discount.RemovedByUserId);
+        Assert.Equal("Entered in error", discount.RemovalReason);
     }
 
     private static (Sale Sale, SaleLine Line, Guid UserId) CreateSale(
