@@ -37,6 +37,7 @@ public class WholesalePosDbContext : DbContext
 
     public DbSet<Sale> Sales => Set<Sale>();
     public DbSet<SaleLine> SaleLines => Set<SaleLine>();
+    public DbSet<SaleDiscount> SaleDiscounts => Set<SaleDiscount>();
 
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
