@@ -31,6 +31,9 @@ public class SaleConfiguration
         builder.Property(x => x.CreatedAt)
             .IsRequired();
 
+        builder.Property(x => x.VoidReason)
+            .HasMaxLength(500);
+
         builder.Property(x => x.CheckoutIdempotencyKey)
             .HasMaxLength(100);
 
@@ -44,6 +47,11 @@ public class SaleConfiguration
         builder.HasOne(x => x.Customer)
             .WithMany()
             .HasForeignKey(x => x.CustomerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.VoidedByUser)
+            .WithMany()
+            .HasForeignKey(x => x.VoidedByUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(x => x.Lines)
