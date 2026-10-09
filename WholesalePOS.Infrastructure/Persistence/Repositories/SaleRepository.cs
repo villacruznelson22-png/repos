@@ -27,8 +27,21 @@ public class SaleRepository
                 .ThenInclude(x => x.Product)
             .Include(x => x.Payments)
             .Include(x => x.Discounts)
+            .Include(x => x.Refunds)
             .SingleOrDefaultAsync(
                 x => x.Id == id,
+                cancellationToken);
+    }
+
+    public Task<SaleRefund?> GetRefundByIdempotencyKeyAsync(
+        string idempotencyKey,
+        CancellationToken cancellationToken)
+    {
+        var normalizedKey = idempotencyKey.Trim();
+
+        return _context.SaleRefunds
+            .SingleOrDefaultAsync(
+                refund => refund.IdempotencyKey == normalizedKey,
                 cancellationToken);
     }
 
