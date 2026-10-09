@@ -229,6 +229,14 @@ public class Sale
                 "Sale line was not found.");
         }
 
+        // Reversed discounts remain in the audit history and still reference
+        // their original sale line. Keep that line to preserve the FK and audit trail.
+        if (Discounts.Any(discount => discount.SaleLineId == lineId))
+        {
+            throw new SaleDomainException(
+                "A sale line with discount history cannot be removed.");
+        }
+
         Lines.Remove(line);
     }
 
