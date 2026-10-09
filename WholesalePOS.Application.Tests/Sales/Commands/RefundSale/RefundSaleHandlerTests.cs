@@ -1,0 +1,154 @@
+using Moq;
+using WholesalePOS.Application.Common.Exceptions;
+using WholesalePOS.Application.Interfaces;
+using WholesalePOS.Application.Sales.Commands.RefundSale;
+using WholesalePOS.Domain.Entities;
+using WholesalePOS.Domain.Enums;
+using WholesalePOS.Domain.Exceptions;
+using WholesalePOS.Domain.ValueObjects;
+
+namespace WholesalePOS.Application.Tests.Sales.Commands.RefundSale;
+
+public class RefundSaleHandlerTests
+{
+    [Fact]
+    public async Task Handle_RecordsRefund()
+    {
+        var userId = Guid.NewGuid();
+        var sale = CreateCompletedSale(100m);
+        var sales = CreateRepository(sale);
+        var handler = new RefundSaleHandler(
+            sales.Object, CreateAuthenticatedUser(userId).Object);
+
+        var refundId = await handler.Handle(
+            new RefundSaleCommand(
+                sale.Id, 30m, PaymentMethod.Cash, "Customer return", "refund-001"),
+            CancellationToken.None);
+
+        var refund = Assert.Single(sale.Refunds);
+        Assert.Equal(refundId, refund.Id);
+        Assert.Equal(30m, refund.Amount.Value);
+        Assert.Equal(userId, refund.RefundedByUserId);
+        Assert.Equal("Customer return", refund.Reason);
+        Assert.Equal(30m, sale.GetRefundedAmount());
+    }
+
+    [Fact]
+    public async Task Handle_RejectsRefundGreaterThanRemainingPaidAmount()
+    {
+        var sale = CreateCompletedSale(100m);
+        var handler = new RefundSaleHandler(
+            CreateRepository(sale).Object,
+            CreateAuthenticatedUser(Guid.NewGuid()).Object);
+
+        await handler.Handle(
+            new RefundSaleCommand(
+                sale.Id, 70m, PaymentMethod.Cash, "First refund", "refund-001"),
+            CancellationToken.None);
+
+        await Assert.ThrowsAsync<SaleDomainException>(() => handler.Handle(
+            new RefundSaleCommand(
+                sale.Id, 40m, PaymentMethod.Cash, "Too much", "refund-002"),
+            CancellationToken.None));
+
+        Assert.Single(sale.Refunds);
+    }
+
+    [Fact]
+    public async Task Handle_ReturnsExistingRefundForSameIdempotentRequest()
+    {
+        var sale = CreateCompletedSale(100m);
+        var existing = new SaleRefund(
+            sale.Id, new Money(25m), PaymentMethod.GCash, DateTime.UtcNow,
+            Guid.NewGuid(), "Refund", "retry-key");
+        sale.AddRefund(existing);
+
+        var handler = new RefundSaleHandler(
+            CreateRepository(sale).Object,
+            CreateAuthenticatedUser(Guid.NewGuid()).Object);
+
+        var result = await handler.Handle(
+            new RefundSaleCommand(
+                sale.Id, 25m, PaymentMethod.GCash, "Refund", "retry-key"),
+            CancellationToken.None);
+
+        Assert.Equal(existing.Id, result);
+        Assert.Single(sale.Refunds);
+    }
+
+    [Fact]
+    public async Task Handle_RejectsIdempotencyKeyReusedWithDifferentPayload()
+    {
+        var sale = CreateCompletedSale(100m);
+        var existing = new SaleRefund(
+            sale.Id, new Money(25m), PaymentMethod.GCash, DateTime.UtcNow,
+            Guid.NewGuid(), "Refund", "retry-key");
+        sale.AddRefund(existing);
+
+        var handler = new RefundSaleHandler(
+            CreateRepository(sale).Object,
+            CreateAuthenticatedUser(Guid.NewGuid()).Object);
+
+        await Assert.ThrowsAsync<SaleDomainException>(() => handler.Handle(
+            new RefundSaleCommand(
+                sale.Id, 35m, PaymentMethod.GCash, "Refund", "retry-key"),
+            CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Handle_RejectsUnauthenticatedUser()
+    {
+        var sale = CreateCompletedSale(100m);
+        var currentUser = new Mock<ICurrentUser>();
+        currentUser.SetupGet(x => x.IsAuthenticated).Returns(false);
+        currentUser.SetupGet(x => x.UserId).Returns((Guid?)null);
+        var handler = new RefundSaleHandler(
+            CreateRepository(sale).Object, currentUser.Object);
+
+        await Assert.ThrowsAsync<UnauthorizedException>(() => handler.Handle(
+            new RefundSaleCommand(
+                sale.Id, 10m, PaymentMethod.Cash, "Refund", "refund-001"),
+            CancellationToken.None));
+
+        Assert.Empty(sale.Refunds);
+    }
+
+    private static Mock<ISaleRepository> CreateRepository(Sale sale)
+    {
+        var repository = new Mock<ISaleRepository>();
+        repository.Setup(x => x.CreateRefundAtomicallyAsync(
+                It.IsAny<SaleRefund>(), It.IsAny<CancellationToken>()))
+            .Returns<SaleRefund, CancellationToken>((refund, _) =>
+            {
+                var existing = sale.Refunds.SingleOrDefault(
+                    x => x.IdempotencyKey == refund.IdempotencyKey);
+                if (existing is not null)
+                    return Task.FromResult(existing);
+
+                sale.AddRefund(refund);
+                return Task.FromResult(refund);
+            });
+        return repository;
+    }
+
+    private static Mock<ICurrentUser> CreateAuthenticatedUser(Guid userId)
+    {
+        var currentUser = new Mock<ICurrentUser>();
+        currentUser.SetupGet(x => x.IsAuthenticated).Returns(true);
+        currentUser.SetupGet(x => x.UserId).Returns(userId);
+        return currentUser;
+    }
+
+    private static Sale CreateCompletedSale(decimal amountPaid)
+    {
+        var sale = new Sale(null, DateTime.UtcNow);
+        sale.AddLine(new SaleLine(
+            sale.Id, Guid.NewGuid(), 1, new Money(amountPaid)));
+        sale.Confirm();
+        sale.AddPayment(new Payment(
+            sale.Id, PaymentMethod.Cash, new Money(amountPaid),
+            DateTime.UtcNow, "payment-key"));
+        sale.Complete();
+        return sale;
+    }
+}

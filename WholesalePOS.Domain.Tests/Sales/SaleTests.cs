@@ -412,7 +412,7 @@ public class SaleTests
         sale.Confirm();
         sale.Complete();
 
-        sale.Void();
+        sale.Void(Guid.NewGuid(), "Test void");
 
         Assert.Equal(
             SaleStatus.Voided,
@@ -432,7 +432,7 @@ public class SaleTests
 
         var exception =
             Assert.Throws<SaleDomainException>(
-                () => sale.Void());
+                () => sale.Void(Guid.NewGuid(), "Test void"));
 
         Assert.Equal(
             "Only a completed sale can be voided.",
@@ -451,7 +451,7 @@ public class SaleTests
 
         var exception =
             Assert.Throws<SaleDomainException>(
-                () => sale.Void());
+                () => sale.Void(Guid.NewGuid(), "Test void"));
 
         Assert.Equal(
             "Only a completed sale can be voided.",
@@ -471,7 +471,7 @@ public class SaleTests
 
         var exception =
             Assert.Throws<SaleDomainException>(
-                () => sale.Void());
+                () => sale.Void(Guid.NewGuid(), "Test void"));
 
         Assert.Equal(
             "Only a completed sale can be voided.",
@@ -492,11 +492,11 @@ public class SaleTests
 
         sale.Confirm();
         sale.Complete();
-        sale.Void();
+        sale.Void(Guid.NewGuid(), "Test void");
 
         var exception =
             Assert.Throws<SaleDomainException>(
-                () => sale.Void());
+                () => sale.Void(Guid.NewGuid(), "Test void"));
 
         Assert.Equal(
             "Only a completed sale can be voided.",
@@ -697,7 +697,7 @@ public class SaleTests
 
         sale.Confirm();
         sale.Complete();
-        sale.Void();
+        sale.Void(Guid.NewGuid(), "Test void");
 
         Assert.Throws<SaleDomainException>(
             () => sale.AddLine(

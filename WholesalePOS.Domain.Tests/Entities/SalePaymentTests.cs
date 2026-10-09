@@ -70,7 +70,7 @@ public class SalePaymentTests
     {
         var sale = CreateConfirmedSale();
         sale.Complete();
-        sale.Void();
+        sale.Void(Guid.NewGuid(), "Test void");
 
         var payment = CreatePayment(sale.Id);
 

@@ -28,6 +28,12 @@ public class Sale
 
     public DateTime? VoidedAt { get; private set; }
 
+    public Guid? VoidedByUserId { get; private set; }
+
+    public string? VoidReason { get; private set; }
+
+    public User? VoidedByUser { get; private set; }
+
     /// <summary>
     /// Idempotency key of the checkout operation that completed this sale.
     /// It is null until checkout succeeds.
@@ -49,6 +55,9 @@ public class Sale
 
     public ICollection<SaleDiscount> Discounts { get; private set; }
         = new List<SaleDiscount>();
+
+    public ICollection<SaleRefund> Refunds { get; private set; }
+        = new List<SaleRefund>();
 
     private Sale()
     {
@@ -301,6 +310,33 @@ public class Sale
         Payments.Add(payment);
     }
 
+    public void AddRefund(SaleRefund refund)
+    {
+        ArgumentNullException.ThrowIfNull(refund);
+
+        if (Status != SaleStatus.Completed && Status != SaleStatus.Voided)
+            throw new SaleDomainException("Only a completed or voided sale can be refunded.");
+
+        if (refund.SaleId != Id)
+            throw new SaleDomainException("Refund does not belong to this sale.");
+
+        if (Refunds.Any(x => string.Equals(
+                x.IdempotencyKey, refund.IdempotencyKey, StringComparison.Ordinal)))
+            throw new SaleDomainException("This refund idempotency key has already been used for this sale.");
+
+        var amountAlreadyRefunded = Refunds.Sum(x => x.Amount.Value);
+        var amountPaid = Payments.Sum(x => x.Amount.Value);
+        var remainingRefundable = amountPaid - amountAlreadyRefunded;
+
+        if (refund.Amount.Value > remainingRefundable)
+            throw new SaleDomainException("Refund amount cannot exceed the remaining amount paid.");
+
+        Refunds.Add(refund);
+    }
+
+    public decimal GetRefundedAmount()
+        => Refunds.Sum(refund => refund.Amount.Value);
+
     public void SetCheckoutIdempotencyKey(string idempotencyKey)
     {
         if (string.IsNullOrWhiteSpace(idempotencyKey))
@@ -373,7 +409,7 @@ public class Sale
         CancelledAt = DateTime.UtcNow;
     }
 
-    public void Void()
+    public void Void(Guid voidedByUserId, string reason)
     {
         if (Status != SaleStatus.Completed)
         {
@@ -381,8 +417,30 @@ public class Sale
                 "Only a completed sale can be voided.");
         }
 
+        if (voidedByUserId == Guid.Empty)
+        {
+            throw new SaleDomainException(
+                "The user who voids the sale is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            throw new SaleDomainException(
+                "A reason is required to void a sale.");
+        }
+
+        var normalizedReason = reason.Trim();
+
+        if (normalizedReason.Length > 500)
+        {
+            throw new SaleDomainException(
+                "The void reason cannot exceed 500 characters.");
+        }
+
         Status = SaleStatus.Voided;
         VoidedAt = DateTime.UtcNow;
+        VoidedByUserId = voidedByUserId;
+        VoidReason = normalizedReason;
     }
 
     private void EnsureEditable()

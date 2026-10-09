@@ -6,11 +6,13 @@ using Microsoft.AspNetCore.Mvc;
 using WholesalePOS.Api.Contracts.Sales;
 using WholesalePOS.Application.Sales.Commands.ApplySaleDiscount;
 using WholesalePOS.Application.Sales.Commands.RemoveSaleDiscount;
+using WholesalePOS.Application.Sales.Commands.RefundSale;
 using WholesalePOS.Application.Sales.Commands.CancelSale;
 using WholesalePOS.Application.Sales.Commands.CheckoutSale;
 using WholesalePOS.Application.Sales.Commands.ConfirmSale;
 using WholesalePOS.Application.Sales.Commands.CreateSale;
 using WholesalePOS.Application.Sales.Commands.UpdateSale;
+using WholesalePOS.Application.Sales.Commands.VoidSale;
 using WholesalePOS.Application.Sales.Queries.GetSaleById;
 using WholesalePOS.Application.Sales.Queries.GetSales;
 
@@ -99,6 +101,42 @@ public class SalesController : ControllerBase
             cancellationToken);
 
         return NoContent();
+    }
+
+    [HttpPost("{saleId:guid}/void")]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<IActionResult> Void(
+        Guid saleId,
+        [FromBody] VoidSaleRequest request,
+        CancellationToken cancellationToken)
+    {
+        await _sender.Send(
+            new VoidSaleCommand(saleId, request.Reason),
+            cancellationToken);
+
+        return NoContent();
+    }
+
+    [HttpPost("{saleId:guid}/refunds")]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<IActionResult> Refund(
+        Guid saleId,
+        [FromBody] RefundSaleRequest request,
+        CancellationToken cancellationToken)
+    {
+        var refundId = await _sender.Send(
+            new RefundSaleCommand(
+                saleId,
+                request.Amount,
+                request.Method,
+                request.Reason,
+                request.IdempotencyKey,
+                request.ReferenceNumber),
+            cancellationToken);
+
+        return Created(
+            $"/api/sales/{saleId}",
+            new { id = refundId });
     }
 
     [HttpPost("{saleId:guid}/checkout")]

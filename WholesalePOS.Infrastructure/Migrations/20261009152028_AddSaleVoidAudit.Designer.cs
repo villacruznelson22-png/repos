@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WholesalePOS.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using WholesalePOS.Infrastructure.Persistence;
 namespace WholesalePOS.Infrastructure.Migrations
 {
     [DbContext(typeof(WholesalePosDbContext))]
-    partial class WholesalePosDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261009152028_AddSaleVoidAudit")]
+    partial class AddSaleVoidAudit
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -772,55 +775,6 @@ namespace WholesalePOS.Infrastructure.Migrations
                     b.ToTable("SaleLines", (string)null);
                 });
 
-            modelBuilder.Entity("WholesalePOS.Domain.Entities.SaleRefund", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("Amount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("IdempotencyKey")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int>("Method")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("ReferenceNumber")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime>("RefundedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("RefundedByUserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("SaleId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("IdempotencyKey")
-                        .IsUnique()
-                        .HasDatabaseName("UX_SaleRefunds_IdempotencyKey");
-
-                    b.HasIndex("RefundedByUserId");
-
-                    b.HasIndex("SaleId");
-
-                    b.ToTable("SaleRefunds", (string)null);
-                });
-
             modelBuilder.Entity("WholesalePOS.Domain.Entities.Supplier", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1142,25 +1096,6 @@ namespace WholesalePOS.Infrastructure.Migrations
                     b.Navigation("Sale");
                 });
 
-            modelBuilder.Entity("WholesalePOS.Domain.Entities.SaleRefund", b =>
-                {
-                    b.HasOne("WholesalePOS.Domain.Entities.User", "RefundedByUser")
-                        .WithMany()
-                        .HasForeignKey("RefundedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("WholesalePOS.Domain.Entities.Sale", "Sale")
-                        .WithMany("Refunds")
-                        .HasForeignKey("SaleId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("RefundedByUser");
-
-                    b.Navigation("Sale");
-                });
-
             modelBuilder.Entity("WholesalePOS.Domain.Entities.CityMunicipality", b =>
                 {
                     b.Navigation("Barangays");
@@ -1200,8 +1135,6 @@ namespace WholesalePOS.Infrastructure.Migrations
                     b.Navigation("Lines");
 
                     b.Navigation("Payments");
-
-                    b.Navigation("Refunds");
                 });
 #pragma warning restore 612, 618
         }
