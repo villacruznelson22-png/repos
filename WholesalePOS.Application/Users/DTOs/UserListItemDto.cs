@@ -9,4 +9,6 @@ public sealed class UserListItemDto
     public DateTime CreatedAt { get; init; }
     public DateTime? LastLoginAt { get; init; }
     public IReadOnlyCollection<string> Roles { get; init; } = [];
+    public bool CanDeactivate { get; init; } = true;
+    public bool CanRemoveAdminRole { get; init; } = true;
 }
