@@ -26,6 +26,9 @@ public sealed class GetSaleByIdHandler
         if (sale is null)
             throw SaleErrors.NotFound(request.SaleId);
 
+        var totalPaid = sale.Payments.Sum(payment => payment.Amount.Value);
+        var totalRefunded = sale.GetRefundedAmount();
+
         return new SaleDto
         {
             Id = sale.Id,
@@ -44,6 +47,9 @@ public sealed class GetSaleByIdHandler
             SubtotalAmount = sale.GetSubtotalAmount().Value,
             DiscountTotalAmount = sale.GetDiscountTotalAmount().Value,
             TotalAmount = sale.GetTotalAmount().Value,
+            TotalPaidAmount = totalPaid,
+            TotalRefundedAmount = totalRefunded,
+            RemainingRefundableAmount = Math.Max(0m, totalPaid - totalRefunded),
 
             Lines = sale.Lines
                 .Select(line => new SaleLineDto
@@ -84,6 +90,20 @@ public sealed class GetSaleByIdHandler
                     RemovedAt = discount.RemovedAt,
                     RemovedByUserId = discount.RemovedByUserId,
                     RemovalReason = discount.RemovalReason
+                })
+                .ToList(),
+
+            Refunds = sale.Refunds
+                .OrderBy(refund => refund.RefundedAt)
+                .Select(refund => new SaleRefundDto
+                {
+                    Id = refund.Id,
+                    Amount = refund.Amount.Value,
+                    Method = (int)refund.Method,
+                    RefundedAt = refund.RefundedAt,
+                    RefundedByUserId = refund.RefundedByUserId,
+                    Reason = refund.Reason,
+                    ReferenceNumber = refund.ReferenceNumber
                 })
                 .ToList()
         };
