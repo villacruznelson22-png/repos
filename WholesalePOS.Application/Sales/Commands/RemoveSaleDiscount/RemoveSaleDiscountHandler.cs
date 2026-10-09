@@ -8,13 +8,16 @@ public sealed class RemoveSaleDiscountHandler
     : IRequestHandler<RemoveSaleDiscountCommand>
 {
     private readonly ISaleRepository _saleRepository;
+    private readonly ICurrentUser _currentUser;
     private readonly IUnitOfWork _unitOfWork;
 
     public RemoveSaleDiscountHandler(
         ISaleRepository saleRepository,
+        ICurrentUser currentUser,
         IUnitOfWork unitOfWork)
     {
         _saleRepository = saleRepository;
+        _currentUser = currentUser;
         _unitOfWork = unitOfWork;
     }
 
@@ -28,7 +31,13 @@ public sealed class RemoveSaleDiscountHandler
         if (sale is null)
             throw SaleErrors.NotFound(request.SaleId);
 
-        sale.RemoveDiscount(request.DiscountId);
+        if (!_currentUser.IsAuthenticated ||
+            _currentUser.UserId is not Guid userId ||
+            userId == Guid.Empty)
+            throw new UnauthorizedAccessException(
+                "An authenticated employee is required to remove a discount.");
+
+        sale.RemoveDiscount(request.DiscountId, userId, request.Reason);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }
