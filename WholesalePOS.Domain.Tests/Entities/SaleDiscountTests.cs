@@ -70,6 +70,20 @@ public class SaleDiscountTests
     }
 
     [Fact]
+    public void RemoveLine_WhenReversedDiscountHistoryReferencesLine_Throws()
+    {
+        var (sale, line, userId) = CreateSale(1, 100m);
+        var discount = new SaleDiscount(
+            sale.Id, line.Id, DiscountScope.SaleLine,
+            DiscountCalculationType.FixedAmount, 25m,
+            new Money(25m), "Manual discount", userId);
+        sale.AddDiscount(discount);
+        sale.RemoveDiscount(discount.Id, userId, "Entered in error");
+
+        Assert.Throws<SaleDomainException>(() => sale.RemoveLine(line.Id));
+    }
+
+    [Fact]
     public void RemoveDiscount_RecalculatesSaleTotal()
     {
         var (sale, line, userId) = CreateSale(1, 100m);
