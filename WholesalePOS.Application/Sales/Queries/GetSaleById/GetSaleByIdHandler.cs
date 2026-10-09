@@ -39,6 +39,8 @@ public sealed class GetSaleByIdHandler
             CompletedAt = sale.CompletedAt,
             CancelledAt = sale.CancelledAt,
             VoidedAt = sale.VoidedAt,
+            SubtotalAmount = sale.GetSubtotalAmount().Value,
+            DiscountTotalAmount = sale.GetDiscountTotalAmount().Value,
             TotalAmount = sale.GetTotalAmount().Value,
 
             Lines = sale.Lines
@@ -61,6 +63,21 @@ public sealed class GetSaleByIdHandler
                     Amount = payment.Amount.Value,
                     PaidAt = payment.PaidAt,
                     ReferenceNumber = payment.ReferenceNumber
+                })
+                .ToList(),
+
+            Discounts = sale.Discounts
+                .Select(discount => new SaleDiscountDto
+                {
+                    Id = discount.Id,
+                    SaleLineId = discount.SaleLineId,
+                    Scope = (int)discount.Scope,
+                    CalculationType = (int)discount.CalculationType,
+                    Value = discount.Value,
+                    Amount = discount.Amount.Value,
+                    Reason = discount.Reason,
+                    AppliedByUserId = discount.AppliedByUserId,
+                    AppliedAt = discount.AppliedAt
                 })
                 .ToList()
         };
