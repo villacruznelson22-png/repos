@@ -82,7 +82,8 @@ public class Sale
     }
 
     public Money GetDiscountTotalAmount()
-        => new(Discounts.Sum(discount => discount.Amount.Value));
+        => new(Discounts.Where(discount => !discount.IsRemoved)
+            .Sum(discount => discount.Amount.Value));
 
     public Money GetTotalAmount()
         => new(Math.Max(0m, GetSubtotalAmount().Value - GetDiscountTotalAmount().Value));
@@ -95,19 +96,22 @@ public class Sale
         if (discount.SaleId != Id)
             throw new SaleDomainException("Discount does not belong to this sale.");
 
+        if (discount.IsRemoved)
+            throw new SaleDomainException("A removed discount cannot be applied to a sale.");
+
         if (discount.Scope == DiscountScope.SaleLine)
         {
             if (discount.SaleLineId is not Guid lineId ||
                 Lines.All(line => line.Id != lineId))
                 throw new SaleDomainException("Discount sale line was not found on this sale.");
 
-            if (Discounts.Any(x => x.Scope == DiscountScope.Sale))
+            if (Discounts.Any(x => !x.IsRemoved && x.Scope == DiscountScope.Sale))
                 throw new SaleDomainException(
                     "Line-item discounts must be applied before sale-wide discounts.");
 
             var line = Lines.Single(x => x.Id == lineId);
             var alreadyDiscounted = Discounts
-                .Where(x => x.Scope == DiscountScope.SaleLine && x.SaleLineId == lineId)
+                .Where(x => !x.IsRemoved && x.Scope == DiscountScope.SaleLine && x.SaleLineId == lineId)
                 .Sum(x => x.Amount.Value);
             var available = line.GetTotalAmount().Value - alreadyDiscounted;
 
@@ -118,10 +122,10 @@ public class Sale
         else
         {
             var lineDiscounts = Discounts
-                .Where(x => x.Scope == DiscountScope.SaleLine)
+                .Where(x => !x.IsRemoved && x.Scope == DiscountScope.SaleLine)
                 .Sum(x => x.Amount.Value);
             var saleDiscounts = Discounts
-                .Where(x => x.Scope == DiscountScope.Sale)
+                .Where(x => !x.IsRemoved && x.Scope == DiscountScope.Sale)
                 .Sum(x => x.Amount.Value);
             var available = GetSubtotalAmount().Value - lineDiscounts - saleDiscounts;
 
@@ -133,7 +137,7 @@ public class Sale
         Discounts.Add(discount);
     }
 
-    public void RemoveDiscount(Guid discountId)
+    public void RemoveDiscount(Guid discountId, Guid removedByUserId, string reason)
     {
         EnsureEditable();
 
@@ -141,7 +145,7 @@ public class Sale
         if (discount is null)
             throw new SaleDomainException("Discount was not found.");
 
-        Discounts.Remove(discount);
+        discount.Remove(removedByUserId, reason);
     }
 
     private void EnsureNoDiscountsBeforeChangingLines()
