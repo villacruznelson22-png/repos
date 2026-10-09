@@ -53,6 +53,12 @@ public sealed class CheckoutSaleHandler
             throw CheckoutErrors.AlreadyProcessed(sale.Id);
         }
 
+
+        if (sale.Status != SaleStatus.Confirmed)
+        {
+            throw CheckoutErrors.SaleNotConfirmed(sale.Id);
+        }
+
         if (sale.CheckoutIdempotencyKey is not null &&
             !string.Equals(
                 sale.CheckoutIdempotencyKey,

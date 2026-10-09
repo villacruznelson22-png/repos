@@ -15,9 +15,12 @@ public sealed class SaleDto
     public DateTime? CompletedAt { get; set; }
     public DateTime? CancelledAt { get; set; }
     public DateTime? VoidedAt { get; set; }
+    public decimal SubtotalAmount { get; set; }
+    public decimal DiscountTotalAmount { get; set; }
     public decimal TotalAmount { get; set; }
     public List<SaleLineDto> Lines { get; set; } = new();
     public List<SalePaymentDto> Payments { get; set; } = new();
+    public List<SaleDiscountDto> Discounts { get; set; } = new();
 }
 
 public sealed class SaleLineDto
@@ -37,4 +40,21 @@ public sealed class SalePaymentDto
     public decimal Amount { get; set; }
     public DateTime PaidAt { get; set; }
     public string? ReferenceNumber { get; set; }
+}
+
+public sealed class SaleDiscountDto
+{
+    public Guid Id { get; set; }
+    public Guid? SaleLineId { get; set; }
+    public int Scope { get; set; }
+    public int CalculationType { get; set; }
+    public decimal Value { get; set; }
+    public decimal Amount { get; set; }
+    public string Reason { get; set; } = string.Empty;
+    public Guid AppliedByUserId { get; set; }
+    public DateTime AppliedAt { get; set; }
+    public bool IsRemoved { get; set; }
+    public DateTime? RemovedAt { get; set; }
+    public Guid? RemovedByUserId { get; set; }
+    public string? RemovalReason { get; set; }
 }

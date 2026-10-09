@@ -259,6 +259,144 @@ public class CheckoutSaleHandlerTests
             Times.Never);
     }
 
+    [Fact]
+    public async Task Handle_ShouldAcceptPaymentMatchingDiscountedSaleTotal()
+    {
+        var product = CreateProduct();
+        var sale = CreateConfirmedSale(product, quantity: 2, unitSellingPrice: 100);
+        sale.AddDiscount(new SaleDiscount(
+            sale.Id,
+            null,
+            DiscountScope.Sale,
+            DiscountCalculationType.FixedAmount,
+            20m,
+            new Money(20m),
+            "Manual promotion",
+            Guid.NewGuid()));
+
+        var balance = InventoryBalance.CreateOpeningBalance(
+            product.Id,
+            10,
+            new InventoryCost(65));
+
+        SetupSale(sale);
+        _inventoryBalanceRepositoryMock
+            .Setup(x => x.GetByProductIdAsync(
+                product.Id,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(balance);
+
+        var handler = CreateHandler();
+
+        await handler.Handle(
+            new CheckoutSaleCommand(
+                sale.Id,
+                "checkout-discount-001",
+                new[]
+                {
+                    new CheckoutPaymentRequest(
+                        PaymentMethod.Cash,
+                        180m,
+                        "payment-discount-001")
+                }),
+            CancellationToken.None);
+
+        Assert.Equal(SaleStatus.Completed, sale.Status);
+        Assert.Equal(180m, sale.GetTotalAmount().Value);
+        Assert.Equal(180m, sale.Payments.Sum(x => x.Amount.Value));
+        Assert.Equal(8, balance.QuantityOnHand);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldRejectPaymentMatchingUndiscountedTotalButNotDiscountedTotal()
+    {
+        var product = CreateProduct();
+        var sale = CreateConfirmedSale(product, quantity: 2, unitSellingPrice: 100);
+        sale.AddDiscount(new SaleDiscount(
+            sale.Id,
+            null,
+            DiscountScope.Sale,
+            DiscountCalculationType.FixedAmount,
+            20m,
+            new Money(20m),
+            "Manual promotion",
+            Guid.NewGuid()));
+
+        SetupSale(sale);
+        var handler = CreateHandler();
+
+        await Assert.ThrowsAsync<WholesalePOS.Application.Common.Exceptions.ConflictException>(
+            () => handler.Handle(
+                new CheckoutSaleCommand(
+                    sale.Id,
+                    "checkout-discount-002",
+                    new[]
+                    {
+                        new CheckoutPaymentRequest(
+                            PaymentMethod.Cash,
+                            200m,
+                            "payment-discount-002")
+                    }),
+                CancellationToken.None));
+
+        Assert.Equal(SaleStatus.Confirmed, sale.Status);
+        Assert.Empty(sale.Payments);
+        _inventoryBalanceRepositoryMock.Verify(
+            x => x.GetByProductIdAsync(
+                It.IsAny<Guid>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+        _unitOfWorkMock.Verify(
+            x => x.SaveChangesAsync(It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Theory]
+    [InlineData(SaleStatus.Draft)]
+    [InlineData(SaleStatus.Cancelled)]
+    public async Task Handle_ShouldRejectSaleThatIsNotConfirmedBeforeInventoryChanges(
+        SaleStatus status)
+    {
+        var product = CreateProduct();
+        var sale = new Sale(null, DateTime.UtcNow);
+        sale.AddLine(new SaleLine(
+            sale.Id,
+            product.Id,
+            1,
+            new Money(100m)));
+
+        if (status == SaleStatus.Confirmed)
+            sale.Confirm();
+        else if (status == SaleStatus.Cancelled)
+            sale.Cancel();
+
+        SetupSale(sale);
+        var handler = CreateHandler();
+
+        await Assert.ThrowsAsync<WholesalePOS.Application.Common.Exceptions.ConflictException>(
+            () => handler.Handle(
+                new CheckoutSaleCommand(
+                    sale.Id,
+                    $"checkout-invalid-{status}",
+                    Array.Empty<CheckoutPaymentRequest>()),
+                CancellationToken.None));
+
+        Assert.Equal(status, sale.Status);
+        _inventoryBalanceRepositoryMock.Verify(
+            x => x.GetByProductIdAsync(
+                It.IsAny<Guid>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+        _inventoryTransactionRepositoryMock.Verify(
+            x => x.AddAsync(
+                It.IsAny<InventoryTransaction>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+        _unitOfWorkMock.Verify(
+            x => x.SaveChangesAsync(It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
     private void SetupSale(Sale sale)
     {
         _saleRepositoryMock
