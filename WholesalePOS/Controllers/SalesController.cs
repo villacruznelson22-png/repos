@@ -1,7 +1,10 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using WholesalePOS.Application.Common.Models;
 using Microsoft.AspNetCore.Mvc;
 using WholesalePOS.Api.Contracts.Sales;
+using WholesalePOS.Application.Sales.Commands.ApplySaleDiscount;
+using WholesalePOS.Application.Sales.Commands.RemoveSaleDiscount;
 using WholesalePOS.Application.Sales.Commands.CancelSale;
 using WholesalePOS.Application.Sales.Commands.CheckoutSale;
 using WholesalePOS.Application.Sales.Commands.ConfirmSale;
@@ -119,4 +122,39 @@ public class SalesController : ControllerBase
 
         return NoContent();
     }
+
+    [HttpPost("{saleId:guid}/discounts")]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<IActionResult> ApplyDiscount(
+        Guid saleId,
+        [FromBody] ApplySaleDiscountRequest request,
+        CancellationToken cancellationToken)
+    {
+        var discountId = await _sender.Send(
+            new ApplySaleDiscountCommand(
+                saleId,
+                request.SaleLineId,
+                request.Scope,
+                request.CalculationType,
+                request.Value,
+                request.Reason),
+            cancellationToken);
+
+        return Created($"/api/sales/{saleId}", new { id = discountId });
+    }
+
+    [HttpDelete("{saleId:guid}/discounts/{discountId:guid}")]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<IActionResult> RemoveDiscount(
+        Guid saleId,
+        Guid discountId,
+        CancellationToken cancellationToken)
+    {
+        await _sender.Send(
+            new RemoveSaleDiscountCommand(saleId, discountId),
+            cancellationToken);
+
+        return NoContent();
+    }
+
 }
