@@ -28,6 +28,12 @@ public class Sale
 
     public DateTime? VoidedAt { get; private set; }
 
+    public Guid? VoidedByUserId { get; private set; }
+
+    public string? VoidReason { get; private set; }
+
+    public User? VoidedByUser { get; private set; }
+
     /// <summary>
     /// Idempotency key of the checkout operation that completed this sale.
     /// It is null until checkout succeeds.
@@ -373,7 +379,7 @@ public class Sale
         CancelledAt = DateTime.UtcNow;
     }
 
-    public void Void()
+    public void Void(Guid voidedByUserId, string reason)
     {
         if (Status != SaleStatus.Completed)
         {
@@ -381,8 +387,30 @@ public class Sale
                 "Only a completed sale can be voided.");
         }
 
+        if (voidedByUserId == Guid.Empty)
+        {
+            throw new SaleDomainException(
+                "The user who voids the sale is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            throw new SaleDomainException(
+                "A reason is required to void a sale.");
+        }
+
+        var normalizedReason = reason.Trim();
+
+        if (normalizedReason.Length > 500)
+        {
+            throw new SaleDomainException(
+                "The void reason cannot exceed 500 characters.");
+        }
+
         Status = SaleStatus.Voided;
         VoidedAt = DateTime.UtcNow;
+        VoidedByUserId = voidedByUserId;
+        VoidReason = normalizedReason;
     }
 
     private void EnsureEditable()
