@@ -13,6 +13,7 @@ public interface IUserRepository
     Task<RefreshToken?> GetRefreshTokenAsync(string tokenHash, CancellationToken cancellationToken);
     Task<bool> RevokeRefreshTokenAsync(Guid refreshTokenId, DateTime utcNow, CancellationToken cancellationToken);
     Task<int> RevokeAllRefreshTokensForUserAsync(Guid userId, DateTime utcNow, CancellationToken cancellationToken);
+    Task<int> CountActiveAdminsAsync(CancellationToken cancellationToken);
     Task<Role?> GetRoleByNameAsync(string name, CancellationToken cancellationToken);
     Task AddAsync(User user, CancellationToken cancellationToken);
     Task AddRefreshTokenAsync(RefreshToken refreshToken, CancellationToken cancellationToken);
