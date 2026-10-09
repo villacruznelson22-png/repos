@@ -87,7 +87,8 @@ public class SaleRepository
                 TotalAmount = Math.Max(0m,
                     x.Lines.Sum(line =>
                         line.UnitSellingPrice.Value * line.Quantity) -
-                    x.Discounts.Sum(discount => discount.Amount.Value))
+                    x.Discounts.Where(discount => !discount.IsRemoved)
+                        .Sum(discount => discount.Amount.Value))
             })
             .ToList();
 
