@@ -1,5 +1,6 @@
 using Moq;
 using WholesalePOS.Application.Interfaces;
+using WholesalePOS.Application.Common.Exceptions;
 using WholesalePOS.Application.Sales.Commands.RemoveSaleDiscount;
 using WholesalePOS.Domain.Entities;
 using WholesalePOS.Domain.Enums;
@@ -66,7 +67,7 @@ public class RemoveSaleDiscountHandlerTests
         var handler = new RemoveSaleDiscountHandler(
             sales.Object, currentUser.Object, unitOfWork.Object);
 
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => handler.Handle(
+        await Assert.ThrowsAsync<UnauthorizedException>(() => handler.Handle(
             new RemoveSaleDiscountCommand(sale.Id, discount.Id, "Entered in error"),
             CancellationToken.None));
 
