@@ -10,6 +10,10 @@ public interface ISaleRepository : IRepository<Sale>
         Guid id,
         CancellationToken cancellationToken);
 
+    Task<SaleRefund?> GetRefundByIdempotencyKeyAsync(
+        string idempotencyKey,
+        CancellationToken cancellationToken);
+
     Task<PagedResult<SaleListItemDto>> GetPagedAsync(
         GetSalesQuery query,
         CancellationToken cancellationToken);
