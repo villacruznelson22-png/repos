@@ -53,14 +53,14 @@ public sealed class ApplySaleDiscountHandler
 
             eligibleAmount = line.GetTotalAmount().Value -
                 sale.Discounts
-                    .Where(x => x.Scope == DiscountScope.SaleLine &&
+                    .Where(x => !x.IsRemoved && x.Scope == DiscountScope.SaleLine &&
                                 x.SaleLineId == lineId)
                     .Sum(x => x.Amount.Value);
         }
         else if (request.Scope == DiscountScope.Sale)
         {
             eligibleAmount = sale.GetSubtotalAmount().Value -
-                sale.Discounts.Sum(x => x.Amount.Value);
+                sale.Discounts.Where(x => !x.IsRemoved).Sum(x => x.Amount.Value);
         }
         else
         {
