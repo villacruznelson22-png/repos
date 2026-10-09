@@ -38,20 +38,6 @@ public sealed class CheckoutSaleHandler
         if (sale is null)
             throw SaleErrors.NotFound(request.SaleId);
 
-        if (sale.Status != SaleStatus.Confirmed &&
-            sale.Status != SaleStatus.Completed)
-        {
-            throw new InvalidOperationException(
-                "Only a confirmed sale can be checked out.");
-        }
-
-        if (sale.Status != SaleStatus.Confirmed &&
-            sale.Status != SaleStatus.Completed)
-        {
-            throw new InvalidOperationException(
-                "Only a confirmed sale can be checked out.");
-        }
-
         var checkoutKey = request.IdempotencyKey.Trim();
 
         if (sale.Status == SaleStatus.Completed)
@@ -65,6 +51,12 @@ public sealed class CheckoutSaleHandler
             }
 
             throw CheckoutErrors.AlreadyProcessed(sale.Id);
+        }
+
+
+        if (sale.Status != SaleStatus.Confirmed)
+        {
+            throw CheckoutErrors.SaleNotConfirmed(sale.Id);
         }
 
         if (sale.CheckoutIdempotencyKey is not null &&
