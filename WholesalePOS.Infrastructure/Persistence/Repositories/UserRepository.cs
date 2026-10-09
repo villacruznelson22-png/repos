@@ -31,6 +31,7 @@ public sealed class UserRepository : IUserRepository
         }
 
         var totalCount = await usersQuery.CountAsync(cancellationToken);
+        var activeAdminCount = await CountActiveAdminsAsync(cancellationToken);
         var users = await usersQuery.Include(x => x.Roles)
             .OrderBy(x => x.Username).ThenBy(x => x.CreatedAt)
             .Skip((query.PageNumber - 1) * query.PageSize).Take(query.PageSize)
@@ -38,11 +39,17 @@ public sealed class UserRepository : IUserRepository
 
         return new PagedResult<UserListItemDto>
         {
-            Items = users.Select(x => new UserListItemDto
+            Items = users.Select(x =>
             {
-                Id = x.Id, Username = x.Username, DisplayName = x.DisplayName,
-                IsActive = x.IsActive, CreatedAt = x.CreatedAt, LastLoginAt = x.LastLoginAt,
-                Roles = x.Roles.Select(r => r.Name).OrderBy(n => n).ToArray()
+                var isLastActiveAdmin = x.IsActive && x.Roles.Any(r => r.Name == RoleNames.Admin) && activeAdminCount <= 1;
+                return new UserListItemDto
+                {
+                    Id = x.Id, Username = x.Username, DisplayName = x.DisplayName,
+                    IsActive = x.IsActive, CreatedAt = x.CreatedAt, LastLoginAt = x.LastLoginAt,
+                    Roles = x.Roles.Select(r => r.Name).OrderBy(n => n).ToArray(),
+                    CanDeactivate = !isLastActiveAdmin,
+                    CanRemoveAdminRole = !isLastActiveAdmin
+                };
             }).ToArray(),
             PageNumber = query.PageNumber, PageSize = query.PageSize, TotalCount = totalCount
         };
