@@ -53,4 +53,8 @@ public sealed class SaleDiscountDto
     public string Reason { get; set; } = string.Empty;
     public Guid AppliedByUserId { get; set; }
     public DateTime AppliedAt { get; set; }
+    public bool IsRemoved { get; set; }
+    public DateTime? RemovedAt { get; set; }
+    public Guid? RemovedByUserId { get; set; }
+    public string? RemovalReason { get; set; }
 }
