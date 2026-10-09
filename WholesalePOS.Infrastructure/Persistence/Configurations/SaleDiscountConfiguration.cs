@@ -36,7 +36,13 @@ public class SaleDiscountConfiguration : IEntityTypeConfiguration<SaleDiscount>
             .HasMaxLength(500)
             .IsRequired();
 
+        builder.Property(x => x.RemovalReason)
+            .HasMaxLength(500);
+
         builder.Property(x => x.AppliedAt)
+            .IsRequired();
+
+        builder.Property(x => x.IsRemoved)
             .IsRequired();
 
         builder.HasOne(x => x.Sale)
@@ -54,8 +60,14 @@ public class SaleDiscountConfiguration : IEntityTypeConfiguration<SaleDiscount>
             .HasForeignKey(x => x.AppliedByUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(x => x.RemovedByUser)
+            .WithMany()
+            .HasForeignKey(x => x.RemovedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasIndex(x => x.SaleId);
         builder.HasIndex(x => x.SaleLineId);
         builder.HasIndex(x => x.AppliedByUserId);
+        builder.HasIndex(x => x.RemovedByUserId);
     }
 }
