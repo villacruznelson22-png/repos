@@ -5,7 +5,7 @@ using WholesalePOS.Domain.ValueObjects;
 namespace WholesalePOS.Domain.Entities;
 
 /// <summary>
-/// An immutable record of a discount actually applied to a sale.
+/// An immutable record of a discount applied to a sale, with reversal metadata.
 /// Policy/eligibility rules are intentionally modeled separately later.
 /// </summary>
 public class SaleDiscount
@@ -22,17 +22,22 @@ public class SaleDiscount
     public decimal Value { get; private set; }
 
     /// <summary>
-    /// Calculated and persisted amount in currency, preserving the transaction history.
+    /// Calculated and persisted amount in currency, preserving transaction history.
     /// </summary>
     public Money Amount { get; private set; } = null!;
 
     public string Reason { get; private set; } = null!;
     public Guid AppliedByUserId { get; private set; }
     public DateTime AppliedAt { get; private set; }
+    public bool IsRemoved { get; private set; }
+    public DateTime? RemovedAt { get; private set; }
+    public Guid? RemovedByUserId { get; private set; }
+    public string? RemovalReason { get; private set; }
 
     public Sale Sale { get; private set; } = null!;
     public SaleLine? SaleLine { get; private set; }
     public User AppliedByUser { get; private set; } = null!;
+    public User? RemovedByUser { get; private set; }
 
     private SaleDiscount() { }
 
@@ -86,5 +91,22 @@ public class SaleDiscount
         Reason = reason.Trim();
         AppliedByUserId = appliedByUserId;
         AppliedAt = DateTime.UtcNow;
+    }
+
+    public void Remove(Guid removedByUserId, string reason)
+    {
+        if (IsRemoved)
+            throw new SaleDomainException("Discount has already been removed.");
+
+        if (removedByUserId == Guid.Empty)
+            throw new SaleDomainException("The user removing the discount is required.");
+
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new SaleDomainException("A reason for removing the discount is required.");
+
+        IsRemoved = true;
+        RemovedAt = DateTime.UtcNow;
+        RemovedByUserId = removedByUserId;
+        RemovalReason = reason.Trim();
     }
 }
