@@ -15,6 +15,8 @@ public sealed class SaleDto
     public DateTime? CompletedAt { get; set; }
     public DateTime? CancelledAt { get; set; }
     public DateTime? VoidedAt { get; set; }
+    public Guid? VoidedByUserId { get; set; }
+    public string? VoidReason { get; set; }
     public decimal SubtotalAmount { get; set; }
     public decimal DiscountTotalAmount { get; set; }
     public decimal TotalAmount { get; set; }
