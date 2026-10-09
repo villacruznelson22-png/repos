@@ -149,10 +149,11 @@ public class SalesController : ControllerBase
     public async Task<IActionResult> RemoveDiscount(
         Guid saleId,
         Guid discountId,
+        [FromQuery] string reason,
         CancellationToken cancellationToken)
     {
         await _sender.Send(
-            new RemoveSaleDiscountCommand(saleId, discountId),
+            new RemoveSaleDiscountCommand(saleId, discountId, reason),
             cancellationToken);
 
         return NoContent();
